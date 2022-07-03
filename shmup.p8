@@ -661,6 +661,10 @@ t2+=1
 		return
 	end
 	
+	if t2>100 and #borgships<3 then
+		spawnen()
+	end
+	
 end
 
 -- start screen check for x/o
