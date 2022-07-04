@@ -467,11 +467,12 @@ function update_game()
 		end
 	end	
 	--controls torpedoes x
-	if btn(4) and ded<=0 then
-		if 	bultimer2<=0 and torout <=0 and bul2cnt==0 then
+	if btn(4) and ded==0 then
+		if 	bultimer2<=0 and torout<0 and bul2cnt<=0 then
 			torout=50
 			sfx(4)
-		elseif bultimer2<=0 and bul2cnt>0 then
+		end	
+		if bultimer2<=0 and bul2cnt>=1 and torout<0 then
 			local newbul={}
 			newbul.x=ship.x
 			newbul.y=ship.y
@@ -482,12 +483,9 @@ function update_game()
 			bul2cnt-=1
 			bultimer2=20
 		end
-		
 	end
 	bultimer-=1	
 	bultimer2-=1
-		
-	
 	--movement speed
 	ship.x+=ship.sx
 	ship.y+=ship.sy
@@ -539,12 +537,12 @@ function update_game()
 			myen.spr=myen.sta
 		end
 		if myen.x>130 then
-			myen.x=0
+			myen.x=-3
 		end	
 		if myen.y>130 then
 			myen.y=-3
 			--del(borgships,myen)
-			--spawnen()
+			
 		end		
 	end
 	
@@ -826,6 +824,8 @@ function draw_game()
 		end
 	end
 	
+	
+	print(torout,95,100,8)
 	--don't draw things below here	
 	--ui elements
 	
@@ -868,10 +868,11 @@ function draw_game()
 	spr(27,89,119)
 	spr(27,97,119)
 	spr(27,104,119)
-	spr(28,112,119)
+	spr(27,112,119)
+	spr(28,120,119)
 	
-	print("torpedoes:",67 ,120,12)
-	print(flr(bul2cnt),107,120,8)
+	print("torpedoes:",75 ,120,12)
+	print(flr(bul2cnt),115,120,8)
 	
 	spr(14,64,111)
 	spr(27,72,111)
@@ -879,7 +880,8 @@ function draw_game()
 	spr(27,88,111)
 	spr(27,96,111)
 	spr(27,104,111)
-	spr(28,112,111)
+	spr(27,112,111)
+	spr(28,120,111)
 	
 	if torout>=1 then
 			print("outoftorpedoes",65,112,8)
@@ -887,18 +889,18 @@ function draw_game()
 	
 	if invul>0 and ded==0 then
 		if sin(t/6)<0 then
-			print("shields hit!",65,111,8)
+			print("shields hit!",67,112,8)
 		end	
 	end
 
 	--ui for shields
 	
-	spr(14,1,111)
-	spr(27,9,111)
-	spr(27,17,111)
-	spr(27,25,111)
-	spr(27,33,111)
-	spr(28,41,111)
+	spr(14,0,111)
+	spr(27,8,111)
+	spr(27,16,111)
+	spr(27,24,111)
+	spr(27,32,111)
+	spr(28,40,111)
 	
 	spr(10,32,111,4,1)
 	--shield indicators
