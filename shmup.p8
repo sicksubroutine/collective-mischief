@@ -66,6 +66,7 @@ function startgame()
 	
 	--starting game conditions
 	bul2cnt=10
+	parttor=0
 	muzzle=0
 	muzzle2=0
 	torspr=0
@@ -468,11 +469,11 @@ function update_game()
 	end	
 	--controls torpedoes x
 	if btn(4) and ded==0 then
-		if 	bultimer2<=0 and torout<0 and bul2cnt<=0 then
+		if 	bultimer2<=0 and torout<0 and bul2cnt<=0.99 then
 			torout=50
 			sfx(4)
 		end	
-		if bultimer2<=0 and bul2cnt>=1 and torout<0 then
+		if bultimer2<=0 and bul2cnt>=0.24 and torout<0 then
 			local newbul={}
 			newbul.x=ship.x
 			newbul.y=ship.y
@@ -503,8 +504,8 @@ function update_game()
 		ship.y=102
 	end
 	-- top
-	if ship.y<0 then
-		ship.y=0
+	if ship.y<8 then
+		ship.y=8
 	end
 	
 	--pulse phasers movement
@@ -561,7 +562,7 @@ function update_game()
 					explodes(myen.x,myen.y)
 					sfx(2)
 					borgkills+=1
-					bul2cnt+=0.25	
+					parttor+=1
 				end
 			end	
 		end		
@@ -583,7 +584,7 @@ function update_game()
 					explodes(myen.x,myen.y)
 					sfx(2)
 					borgkills+=1
-					bul2cnt+=0.25
+					parttor+=1
 				end
 			end
 		end		
@@ -602,7 +603,7 @@ function update_game()
 				sparks(ship.x,ship.y)
 				sparks(myen.x,myen.y)
 				explodes(ship.x,ship.y,true)
-				bul2cnt+=0.25
+				parttor+=1
 			if myen.hp<=0 then	
 				del(borgships,myen)
 				explodes(myen.x,myen.y)		
@@ -613,7 +614,12 @@ function update_game()
 	else 
 		invul-=1		
 	end
-	
+	-- number of kills
+	-- to get free torp
+	if parttor>=4 then
+		parttor=0
+		bul2cnt+=1
+	end
 	--u ded
 	if shields<=0 then
 		invul=10000
@@ -731,8 +737,6 @@ function draw_game()
 			end
 		end
 	end
-	
-	
 	--phasers
 	for mybul in all(buls) do
 		drwmyspr(mybul)
@@ -771,7 +775,6 @@ function draw_game()
 	if muzzle2>0 then
 		circfill(ship.x+4,ship.y-1,muzzle2,9)
 	end	
-	
 	--drawing shwaves
 	for mysw in all(shwaves) do
 		circ(mysw.x,mysw.y,mysw.r,mysw.col)
@@ -793,7 +796,6 @@ function draw_game()
 		circfill(myp.x,myp.y,myp.size,pc)
 		myp.x+=myp.sx
 		myp.y+=myp.sy
-		
 		myp.sx=myp.sx*0.7
 		myp.sy=myp.sy*0.7
 		myp.age+=1
@@ -824,29 +826,34 @@ function draw_game()
 		end
 	end
 	
-	
-	print(torout,95,100,8)
 	--don't draw things below here	
 	--ui elements
 	
-	--debug for time
-	
-	--print("time:",5,45,8)
-	--print(t,25,45,8)
-	
-	print("secs:",5,25,8)
-	print(flr(t2/30),25,25,8)
+	--debug printout
+	--seconds since game start
+	print("secs:",90,95,8)
+	print(flr(t2/30),110,95,8)
+	print("out:",83,88,8)
+	print(torout,99,88,8)
 	
 	if delay<110 then
 		print("you only got",25,45,11)
 		print(borgkills,75,45,8)
 		print("kills!",84,45,11)
 	end
+	-- readout for torps
+	spr(14,0,111)
+	spr(27,8,111)
+	spr(27,16,111)
+	spr(27,24,111)
+	spr(27,32,111)
+	spr(27,40,111)
+	spr(28,48,111)
 	
-	
+	print("torpedoes:",2 ,112,12)
+	print(flr(bul2cnt),42,112,8)
 	
 	--borgkills
-	
 	spr(14,0,119)
 	spr(27,8,119)
 	spr(27,16,119)
@@ -855,26 +862,36 @@ function draw_game()
 	spr(27,40,119)
 	spr(27,48,119)
 	spr(27,56,119)
+	spr(27,56,119)
 	spr(28,64,119)
 	
 	print("borg kills:",1,120,12)
 	print(borgkills.."/100",45,120,8)
 	
 	
-	-- readout for torps
-	spr(14,65,119)
-	spr(27,73,119)
-	spr(27,81,119)
-	spr(27,89,119)
-	spr(27,97,119)
-	spr(27,104,119)
-	spr(27,112,119)
-	spr(28,120,119)
+	--ui for shields
 	
-	print("torpedoes:",75 ,120,12)
-	print(flr(bul2cnt),115,120,8)
+	spr(14,0,0)
+	spr(27,8,0)
+	spr(27,16,0)
+	spr(27,24,0)
+	spr(27,32,0)
+	spr(28,40,0)
+	spr(10,32,0,4,1)
 	
-	spr(14,64,111)
+	--shield indicators
+	for i=1,10 do
+		if shields>=i then
+			spr(26,29+i*3,0)
+		end
+		--draw outline/text
+	print("shields",3,1,12) 
+		
+	end
+	
+	--alerts screen 1
+	spr(14,56,111)
+	spr(27,64,111)
 	spr(27,72,111)
 	spr(27,80,111)
 	spr(27,88,111)
@@ -883,35 +900,26 @@ function draw_game()
 	spr(27,112,111)
 	spr(28,120,111)
 	
+	--alerts screen2
+	spr(14,64,0)
+	spr(27,72,0)
+	spr(27,80,0)
+	spr(27,88,0)
+	spr(27,96,0)
+	spr(27,104,0)
+	spr(27,112,0)
+	spr(28,120,0)
+	
 	if torout>=1 then
-			print("outoftorpedoes",65,112,8)
+			print("out of torpedoes",61,112,8)
 	end
 	
 	if invul>0 and ded==0 then
 		if sin(t/6)<0 then
-			print("shields hit!",67,112,8)
+			print("shields hit!",75,1,8)
 		end	
 	end
 
-	--ui for shields
-	
-	spr(14,0,111)
-	spr(27,8,111)
-	spr(27,16,111)
-	spr(27,24,111)
-	spr(27,32,111)
-	spr(28,40,111)
-	
-	spr(10,32,111,4,1)
-	--shield indicators
-	for i=1,10 do
-		if shields>=i then
-			spr(26,29+i*3,111)
-		end
-		--draw outline/text
-	print("shields",3,112,12) 
-		
-	end
 end
 function draw_start()
 	cls(0)
