@@ -210,8 +210,8 @@ function animstars()
 	for i=1,#stars do
 		local mystar=stars[i]
 		mystar.y=mystar.y+mystar.spd
-		if mystar.y>128 then
-			mystar.y-=128
+		if mystar.y>120 then
+			mystar.y-=120
 		end	
 	end
 end
@@ -538,10 +538,10 @@ function update_game()
 		if myen.spr>=myen.las then
 			myen.spr=myen.sta
 		end
-		if myen.x>130 then
+		if myen.x>128 then
 			myen.x=-3
 		end	
-		if myen.y>130 then
+		if myen.y>120 then
 			myen.y=-3
 			--del(borgships,myen)
 			
@@ -859,18 +859,18 @@ function draw_game()
 	print(flr(bul2cnt),42,112,8)
 	
 	--borgkills
-	spr(14,1,119)
-	spr(27,9,119)
-	spr(27,17,119)
-	spr(27,25,119)
-	spr(27,33,119)
-	spr(27,41,119)
-	spr(27,49,119)
-	spr(27,57,119)
-	spr(29,62,119)
+	spr(14,0,119)
+	spr(27,8,119)
+	spr(27,16,119)
+	spr(27,24,119)
+	spr(27,32,119)
+	spr(27,40,119)
+	spr(27,48,119)
+	spr(27,56,119)
+	spr(29,61,119)
 	
-	print("borg kills:",2,120,12)
-	print(borgkills.."/100",46,120,8)
+	print("borg kills:",1,120,12)
+	print(borgkills.."/100",45,120,8)
 	
 	--ui for shields
 	
