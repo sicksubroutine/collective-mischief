@@ -524,10 +524,6 @@ function update_game()
 	if ship.y<8 then
 		ship.y=8
 	end
-	-- blocking off ui
-	--if ship.x>=1 and ship.x<=05 and ship.y==80 then
-	--	ship.y=80
-	--end	
 
 	if ship.x==0 and ship.y>80 then
 		ship.y=80
@@ -575,6 +571,7 @@ function update_game()
 		if myen.y>120 then
 			myen.y=-3
 			myen.x=flr(rnd(120))
+			myen.y=flr(rnd(2))+0.1
 			--del(borgships,myen)	
 		end		
 	end
@@ -597,7 +594,7 @@ function update_game()
 					parttor+=1.125
 					if #borgships==0 then
 						nextwave()
-					end	
+					end
 				end
 			end	
 		end		
@@ -610,7 +607,7 @@ function update_game()
 				del(buls,mybul)
 				smol_shwave(mybul.x,mybul.y)
 				sfx(3)
-				myen.hp-=0.55
+				myen.hp-=0.45
 				myen.flash=2
 				sparks(myen.x,myen.y)
 				smol_shwave(mybul.x,mybul.y)
@@ -771,13 +768,37 @@ function update_wavetxt()
 	wavetime-=1
 	if wavetime<=0 then
 		mode="game"
-		spawnen()
-		spawnen()
-		spawnen()
-		spawnen()
-		spawnen()
-		spawnen()
+		spawnwave1()
 	end	
+	if wave==2 and wavetime<=0 then
+		spawnwave1()
+		spawnwave1()
+	end
+	if wave==3 and wavetime<=0 then
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+	end
+	if wave==4 and wavetime<=0 then
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+	end
+	if wave==5 and wavetime<=0 then
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+		spawnwave1()
+	end
 end
 -->8
 -- draw functions
@@ -892,9 +913,10 @@ function draw_game()
 	
 	--debug printout
 	--seconds since game start
-	print("secs:",90,95,8)
-	print(flr(t2/30),110,95,8)
+	--print("secs:",90,95,8)
+	--print(flr(t2/30),110,95,8)
 	--ending taunt message
+	print(#borgships,90,95,8)
 	if delay<110 then
 		print("you only got",25,45,11)
 		print(borgkills,75,45,8)
@@ -1063,10 +1085,10 @@ function draw_win()
 cls(0)
 star_cut1()
 spr(2,54,94)
-print("you got 100 kills!",25,10,8)
+print("you saved earth!",20,10,8)
 print("good job!", 40,20,8)
-print("too bad the princeess",20,45,8)
-print("is in another castle!",20,55,8)
+print("too bad the princeess",15,45,8)
+print("is in another castle!",15,55,8)
 
 print("think you can blow up",25,75,11)
 print("one thousand borg ships?",20,85,8)
@@ -1098,14 +1120,13 @@ end
 
 function nextwave()
 	wave+=1
-	
-	
-	if wave>10 then
+	if wave>5 then
 		mode="win"
 	else
 		mode="wavetxt"
 		wavetime=80
 	end
+	
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000099999999999999999999999999999900999999900000000
