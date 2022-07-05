@@ -566,11 +566,15 @@ function update_game()
 		if myen.spr>=myen.las then
 			myen.spr=myen.sta
 		end
-		if myen.x>128 then
-			myen.x=-3
+		if myen.x>=0 and myen.x<8 then
+			myen.x=flr(rnd(120))
+		end	
+		if myen.x>121 then
+			myen.x=flr(rnd(120))
 		end	
 		if myen.y>120 then
 			myen.y=-3
+			myen.x=flr(rnd(120))
 			--del(borgships,myen)	
 		end		
 	end
