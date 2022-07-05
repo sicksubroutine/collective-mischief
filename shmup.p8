@@ -281,7 +281,7 @@ function explodes(expx,expy,isblue)
 	add(parts,myp)
 	
 	--clouds n shiz
-	for i=1,20 do
+	for i=1,17 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
@@ -295,12 +295,12 @@ function explodes(expx,expy,isblue)
 	end
 	
 	--sparks
-	for i=1,12 do
+	for i=1,5 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
-		myp.sx=(rnd()-0.5)*14--partspd
-		myp.sy=(rnd()-0.5)*16--partspd
+		myp.sx=(rnd()-0.5)*17--partspd
+		myp.sy=(rnd()-0.5)*15--partspd
 		myp.age=3
 		myp.maxage=10+rnd(7)
 		myp.size=1
@@ -386,7 +386,7 @@ function spawnen()
 	smcube.y=rnd(4)-10
 	smcube.spr=50
 	smcube.sx=1
-	smcube.sy=rnd(1)+0.25
+	smcube.sy=rnd(1)+0.75
 	smcube.hp=5
 	smcube.flash=0
 	smcube.type=1
@@ -607,7 +607,7 @@ function update_game()
 				del(buls,mybul)
 				smol_shwave(mybul.x,mybul.y)
 				sfx(3)
-				myen.hp-=0.45
+				myen.hp-=0.75
 				myen.flash=2
 				sparks(myen.x,myen.y)
 				smol_shwave(mybul.x,mybul.y)
@@ -741,7 +741,7 @@ function update_over()
 	end
 	if btnreleased then
 		if btnp(5) or btnp(4) then
-			mode="over"
+			mode="start"
 			music(0)
 			btnreleased=false
 		end
@@ -916,7 +916,6 @@ function draw_game()
 	--print("secs:",90,95,8)
 	--print(flr(t2/30),110,95,8)
 	--ending taunt message
-	print(#borgships,90,95,8)
 	if delay<110 then
 		print("you only got",25,45,11)
 		print(borgkills,75,45,8)
