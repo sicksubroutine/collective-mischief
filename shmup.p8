@@ -69,7 +69,7 @@ function startgame()
 	ship.spr=2
 	
 	--starting game conditions
-	bul2cnt=5
+	bul2cnt=3
 	parttor=0
 	muzzle=0
 	muzzle2=0
@@ -606,7 +606,7 @@ function update_game()
 				del(buls,mybul)
 				smol_shwave(mybul.x,mybul.y)
 				sfx(3)
-				myen.hp-=1
+				myen.hp-=0.55
 				myen.flash=2
 				sparks(myen.x,myen.y)
 				smol_shwave(mybul.x,mybul.y)
