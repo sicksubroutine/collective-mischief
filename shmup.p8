@@ -1011,6 +1011,7 @@ end
 --waves and enemies
 
 function spawnwave1()
+
 	if wave==1 then
 		spawnen(1)
 		spawnen(1)
@@ -1042,8 +1043,8 @@ function spawnwave1()
 		spawnen(1)
 		spawnen(1)
 		spawnen(1)
-		spawnen(1)
-		spawnen(7)
+		spawnen(1)	
+		spawnen(7)	
 	end
 	
 end
@@ -1073,6 +1074,7 @@ function spawnen(entype)
 		myen.y=rnd(4)-10
 		myen.spr=68
 		myen.hp=2
+		myen.type=1
 		myen.sy=rnd(1)+1.25
 		myen.ani={68,69,70,71}
 	elseif entype==2 then
@@ -1081,6 +1083,7 @@ function spawnen(entype)
 		myen.y=rnd(4)-10
 		myen.spr=84
 		myen.hp=4
+		myen.type=2
 		myen.sy=rnd(1)+0.75
 		myen.ani={84,85,86,87}
 	elseif entype==3 then
@@ -1089,6 +1092,7 @@ function spawnen(entype)
 		myen.y=rnd(4)-10
 		myen.spr=50
 		myen.hp=7
+		myen.type=3
 		myen.sy=rnd(0.50)+0.50
 		myen.ani={50,51,52,53}
 	elseif entype==4 then
@@ -1097,6 +1101,7 @@ function spawnen(entype)
 		myen.y=rnd(4)-10
 		myen.spr=100
 		myen.hp=5
+		myen.type=4
 		myen.sy=rnd(0.5)+0.15	
 			myen.ani={100,101,102,103}
 	elseif entype==5 then
@@ -1107,6 +1112,7 @@ function spawnen(entype)
 		myen.hp=15
 		myen.sy=rnd(2)+1.25
 		myen.ani={72,74,76}
+		myen.type=5
 		myen.sprw=2
 		myen.sprh=2
 	elseif entype==6 then
