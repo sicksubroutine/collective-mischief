@@ -1020,14 +1020,6 @@ function spawnwave1()
 		spawnen(1)
 		spawnen(1)
 		spawnen(2)
-		spawnen(1)
-		spawnen(2)
-		spawnen(1)
-		spawnen(2)
-		spawnen(1)
-		spawnen(2)
-		spawnen(1)
-		spawnen(2)
 	end
 	if wave==3 and wavetime<=0 then
 		spawnen(1)
@@ -1038,42 +1030,20 @@ function spawnwave1()
 		spawnen(1)
 		spawnen(1)
 		spawnen(1)
-		spawnen(3)
-		spawnen(2)
-		spawnen(4)
-		spawnen(4)
 	end
 	if wave==4 and wavetime<=0 then
-		spawnen(1)
-		spawnen(2)
-		spawnen(3)
-		spawnen(4)
-		spawnen(1)
-		spawnen(2)
-		spawnen(3)
-		spawnen(4)
-		spawnen(1)
-		spawnen(2)
-		spawnen(3)
-		spawnen(4)
 		spawnen(5)
-		spawnen(6)
 	end
 	if wave==5 and wavetime<=0 then
 		spawnen(1)
-		spawnen(2)
-		spawnen(3)
-		spawnen(4)
-		spawnen(5)
 		spawnen(1)
-		spawnen(2)
-		spawnen(3)
-		spawnen(4)
-		spawnen(5)
-		spawnen(6)
+		spawnen(1)
+		spawnen(1)
+		spawnen(1)
+		spawnen(1)
+		spawnen(1)
+		spawnen(1)
 		spawnen(7)
-		spawnen(1)
-		spawnen(1)
 	end
 	
 end
@@ -1091,8 +1061,7 @@ end
 
 function spawnen(entype)
 	local myen={}
-	myen.x=rnd(118)+8
-	myen.y=rnd(4)-10
+	
 	myen.sx=1	
 	myen.flash=0
 	myen.aniframe=1
@@ -1100,30 +1069,40 @@ function spawnen(entype)
 	myen.sprh=1
 	if entype==nil or entype==1 then
 		--borg probe
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=68
 		myen.hp=2
 		myen.sy=rnd(1)+1.25
 		myen.ani={68,69,70,71}
 	elseif entype==2 then
 		-- sphere
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=84
-		myen.hp=3
+		myen.hp=4
 		myen.sy=rnd(1)+0.75
 		myen.ani={84,85,86,87}
 	elseif entype==3 then
 		-- med borg cube
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=50
 		myen.hp=7
 		myen.sy=rnd(0.50)+0.50
 		myen.ani={50,51,52,53}
 	elseif entype==4 then
 		-- pyramid
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=100
 		myen.hp=5
 		myen.sy=rnd(0.5)+0.15	
 			myen.ani={100,101,102,103}
 	elseif entype==5 then
 		-- mini boss-assimilated fed
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=70
 		myen.hp=15
 		myen.sy=rnd(2)+1.25
@@ -1132,6 +1111,8 @@ function spawnen(entype)
 		myen.sprh=2
 	elseif entype==6 then
 		-- large cube	- main boss?
+		myen.x=rnd(118)+8
+		myen.y=rnd(4)-10
 		myen.spr=64
 		myen.hp=20
 		myen.sy=rnd(0.25)+rnd(0.5)
@@ -1140,9 +1121,11 @@ function spawnen(entype)
 		myen.sprh=4
 	elseif entype==7 then
 		-- invader sphere - doesn't exist.
+		myen.x=55
+		myen.y=25		
 		myen.spr=128
-		myen.hp=50
-		myen.sy=rnd(0.25)+rnd(0.5)
+		myen.hp=100
+		myen.sy=-0.01
 		myen.ani={128}
 		myen.sprw=4
 		myen.sprh=4 			
