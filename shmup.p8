@@ -363,72 +363,54 @@ function big_shwave(shx,shy)
 	add(shwaves,mysw)
 end
 
-function dis_spr(mynum)
+function dis_spr(mynum,loc)
 	
-	local pos=0 -- your x offset
+	local pos=5 -- your x offset
 													-- for spr()
 	local zerospr=0
-	local digit={}
+	local digit1=0
+	local digit2=0
+	local digit3=0
+	local digit4=0
 	
-	while mynum<=9 do
-		digit=mynum%1
-		mynum=mynum/10
-		print(mynum+digit,21,111)
-		pos=pos+1
+	--	loc=1=top left
+	--loc=2=top right
+	--loc=3=bot left
+	--loc=4=bot right
+	--print(loc,45,45,8)
+	if loc==3 then
+			locx=21
+			locy=111
 	end
-	while mynum>=10 do
-		digit=mynum%10
-		digit=ceil(digit)
-		mynum=mynum/10
-		print(mynum+digit,21,111)
-		pos=pos+1
+	if loc==4 then
+		locx=53
+		locy=119
+	end
+		
+	if mynum<=9 then
+		digit=sub(mynum,1,1)
+		spr(digit,locx,locy)
+	end
+		
+	if mynum>=10 and mynum<=99 then
+		digit=sub(mynum,1,1)
+		digit2=sub(mynum,2,2)
+		
+		spr(0+digit,locx,locy)
+		spr(0+digit2,locx+pos,locy)
+	end
+	
+	if mynum>=100	then
+	
+		digit=sub(mynum,1,1)
+		digit2=sub(mynum,2,2)
+		digit3=sub(mynum,3,3)
+		
+		spr(0+digit,locx,locy)
+		spr(0+digit2,locx+pos,locy)
+		spr(0+digit3,locx+pos*2,locy)
 	end	
-	--[[																										
-	while mynum<9 and mynum>=0 do
-		digit=mynum%10
-		spr(zerospr+digit,21,111)
-	end
-	
-		while mynum>=10 do
-		digit=mynum%10
-		mynum=mynum/10
-		spr(zerospr+digit,21*pos,111)
-		spr(zerospr+digit,21,111)
-		pos+=1	
-	end
-	]]--
-	
-	--sprvar={zerospr,twospr,thrspr,fourspr,fivespr,sixspr,svnspr,egtspr,ninspr}
-	
---[[
-	if mynum==0 then
-		spr(zerospr,21,111)
-	elseif mynum==1 then
-		spr(onespr,21,111)
-	elseif mynum==2 then
-		spr(twospr,21,111)
-	elseif mynum==3 then
-		spr(thrspr,21,111)
-	elseif mynum==4 then
-		spr(fourspr,21,111)
-	elseif mynum==5 then
-		spr(fivespr,21,111)
-	elseif mynum==6 then
-		spr(sixspr,21,111)
-	elseif mynum==7 then
-		spr(svnspr,21,111)
-	elseif mynum==8 then
-		spr(egtspr,21,111)
-	elseif mynum==9 then
-		spr(ninspr,21,111)
-	elseif mynum==10 then
-		spr(onespr,21,111)
-		spr(zerospr,25,111)
-	elseif mynum==11 then
-		spr(onespr,21,111)
-		spr(onespr,25,111)
-	end
-	]]--
+		--print(digit..digit2..digit3,25,25,8)
 end
 
 function makespr()
@@ -921,9 +903,10 @@ function draw_game()
 	spr(120,55,111)
 	spr(111,59,111)
 	
-
-	--dis_spr(bul2cnt)
-	--print(bul2cnt,21,112,8)
+	pal(7,8)
+	pal(6,2)
+	dis_spr(bul2cnt,3)
+	pal()
 	-- second screen on bot-right
 	
 	spr(104,72,111)
@@ -1018,12 +1001,10 @@ function draw_game()
 	
 	print("borg kills:",9,120,12)
 	
-	--sspr(11,10,4,7,10,120,
-	
-	--numspr(borgkills)
-	
-	print(borgkills,54,120,8)
-	
+	pal(7,8)
+	pal(6,2)
+	dis_spr(borgkills,4)
+	pal()
 	--viewscreen ui?
 	--[[
 	--sprite to animate
