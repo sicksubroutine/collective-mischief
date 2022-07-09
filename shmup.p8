@@ -1274,6 +1274,7 @@ end
 -->8
 --behavior
 function doenemy(myen)
+
 	if myen.mission=="flyin" then
 		--flying in
 		myen.y+=rnd(0.75)+0.33
@@ -1282,9 +1283,14 @@ function doenemy(myen)
 		end
 	elseif myen.mission=="protec" then
 		--wait for collective
+		if t>t+30 then
+			myen.mission="assim"
+		end
 	elseif myen.mission=="assim" then
 		--assimilate
-	end	
+		myen.y=ship.y
+	end
+	
 end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
