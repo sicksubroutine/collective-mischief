@@ -17,6 +17,7 @@ function _init()
 	blinkt=1
 	t=0
 	lockout=0
+	
 end
 
 function _update()
@@ -63,13 +64,13 @@ function startgame()
 	t=0
 	nextwave()
 
-	
 	ship=makespr()
 	ship.x=64
 	ship.y=100
 	ship.sx=1
 	ship.sy=1
 	ship.spr=18
+	ship.shake=0
 	
 	--starting game conditions
 	bul2cnt=3
@@ -79,15 +80,16 @@ function startgame()
 	torspr=0
 	shields=5
 	invul=0
-	bultimer=0
-	bultimer2=0
+	btimer=0
+	btimer2=0
 	torout=0
-	borgkills=0
+	kills=0
 	delay=120
 	ded=0
 	faceanim=224
 	wavetime=80
 	moartor=0
+	atkfreq=60
 	
 	stars={}
 	for i=1,100 do
@@ -113,7 +115,7 @@ function startgame()
 	qtor.spr=34
 	add(buls2,qtor)
 	
-	borgships={}
+	enemies={}
 	
 	explode={}
 	
@@ -209,7 +211,17 @@ function animstars()
 	end
 end
 function drwmyspr(myspr)
-	spr(myspr.spr,myspr.x,myspr.y,myspr.sprw,myspr.sprh)
+	local sprx=myspr.x
+	local spry=myspr.y
+	
+	--throws nil value error
+	--seems to be related with
+	--drawing player ship.
+	--if myspr.shake>=0 then
+	--	myspr.shake-=1
+	--	sprx+=sin(t/20)
+	--end	
+	spr(myspr.spr,sprx,spry,myspr.sprw,myspr.sprh)
 end
 --blink and you're dead
 function blink()
@@ -364,11 +376,11 @@ function big_shwave(shx,shy)
 end
 
 function dis_spr(mynum,loc)
-	local pos=5												
+	local pos=5			
 	local z=0
 	--tor,toplowleft
 	if loc==3 then locx=21 locy=119 end
-	--borgkills,botlowleft
+	--kills,botlowleft
 	if loc==4 then locx=46 locy=0 end	
 	if mynum<=9 then
 		digit=sub(mynum,1,1)
@@ -392,10 +404,13 @@ end
 
 function makespr()
 	local myspr={}
+	myspr.shake=0
 	myspr.x=0
 	myspr.y=0
-	myspr.sx=1
+	myspr.sx=0
+	myspr.sy=0
 	myspr.flash=0
+	myspr.flash1=0
 	myspr.aniframe=1
 	myspr.spr=0
 	myspr.sprw=1
@@ -436,7 +451,7 @@ function update_game()
 	end	
 	--controls phasers o
 	if btn(5) and ded<=0 then
-		if bultimer<=0 then
+		if btimer<=0 then
 			local newbul=makespr()
 			newbul.x=ship.x+1
 			newbul.y=ship.y-1
@@ -445,16 +460,16 @@ function update_game()
 			muzzle2=2
 			add(buls,newbul)
 			sfx(0)
-			bultimer=3.5
+			btimer=3.5
 		end
 	end	
 	--controls torpedoes x
 	if btn(4) and ded==0 then
-		if 	bultimer2<=0 and torout<0 and bul2cnt<=0.99 then
+		if 	btimer2<=0 and torout<0 and bul2cnt<=0.99 then
 			torout=50
 			sfx(4)
 		end	
-		if bultimer2<=0 and bul2cnt>=0.24 and torout<0 then
+		if btimer2<=0 and bul2cnt>=0.24 and torout<0 then
 			local newbul=makespr()
 			newbul.x=ship.x-1
 			newbul.y=ship.y-3
@@ -464,11 +479,11 @@ function update_game()
 			sfx(1)
 			muzzle=4
 			bul2cnt-=1
-			bultimer2=20
+			btimer2=20
 		end
 	end
-	bultimer-=1	
-	bultimer2-=1
+	btimer-=1	
+	btimer2-=1
 	--movement speed
 	ship.x+=ship.sx
 	ship.y+=ship.sy
@@ -513,25 +528,26 @@ function update_game()
 	end
 	
 	-- move borg
-	for myen in all(borgships) do
+	for myen in all(enemies) do
 	--enemy mission
 		doenemy(myen)
 		--enemy animation
-		myen.aniframe+=0.4
+		myen.aniframe+=myen.anispd
 		if flr(myen.aniframe)>#myen.ani then
 			myen.aniframe=1
 		end
 		myen.spr=myen.ani[flr(myen.aniframe)]
 	
 		--enemy leaving screen
-		if myen.y>128 then
-			del(borgships,myen)	
+		if myen.mission!="flyin" then
+			if myen.y>128 or myen.x<-8 or myen.x>128 then
+				del(enemies,myen)	
+			end
 		end
-				
 	end
 	
 	-- collision borg x torpedoes
-	for myen in all(borgships) do
+	for myen in all(enemies) do
 		for mybul in all(buls2) do
 			if col(myen,mybul) and ded<=0 then
 				del(buls2,mybul)
@@ -543,9 +559,9 @@ function update_game()
 				smol_shwave(mybul.x,mybul.y)
 				if myen.hp<=0 then
 					explodes(myen.x,myen.y)
-					del(borgships,myen)
+					del(enemies,myen)
 					sfx(2)
-					borgkills+=1
+					kills+=1
 					parttor+=1.125
 				end
 			end	
@@ -553,7 +569,7 @@ function update_game()
 	end
 	
 	-- collision borg x phasers
-	for myen in all(borgships) do
+	for myen in all(enemies) do
 		for mybul in all(buls) do
 			if col(myen,mybul) and ded<=0 then
 				del(buls,mybul)
@@ -566,9 +582,9 @@ function update_game()
 				smol_shwave(mybul.x,mybul.y)
 				if myen.hp<=0 then
 					explodes(myen.x,myen.y)
-					del(borgships,myen)
+					del(enemies,myen)
 					sfx(2)
-					borgkills+=1
+					kills+=1
 					parttor+=1.125
 				end
 			end
@@ -577,7 +593,7 @@ function update_game()
 	
 	-- collision ship x enemies
 	if invul<=0 then
-		for myen in all(borgships) do
+		for myen in all(enemies) do
 			if col(myen,ship) and ded<=0 then
 				sfx(2)
 				myen.hp-=3
@@ -588,9 +604,9 @@ function update_game()
 				sparks(myen.x,myen.y)
 				explodes(ship.x,ship.y,true)
 			if myen.hp<=0 then	
-				del(borgships,myen)
+				del(enemies,myen)
 				explodes(myen.x,myen.y)
-				borgkills+=1
+				kills+=1
 				parttor+=1.125
 				sfx(2)		
 			end
@@ -599,11 +615,6 @@ function update_game()
 	else 
 		invul-=1		
 	end
-	--animate face
-	faceanim+=0.25
-		if faceanim>=229 then
-			faceanim=224
-		end
 	
 	-- number of kills
 	-- to get free torp
@@ -643,7 +654,7 @@ function update_game()
 	end
 	animstars()
 
-	if mode=="game" and #borgships==0 and ded<=0 then
+	if mode=="game" and #enemies==0 and ded<=0 then
 		nextwave()
 	end
 end
@@ -737,12 +748,12 @@ function draw_game()
 	star_start()	
 	-- draw ship
 	if invul<=0 then
-		drwmyspr(ship)
-	else
-		if invul<=0 and ded==1 then
+		drwmyspr(ship)	
+		else
+			if invul<=0 and ded==1 then
 			
-		elseif invul>0 and ded<=0 then
-			if sin(t/5)<0 then
+			elseif invul>0 and ded<=0 then
+				if sin(t/5)<0 then
 				spr(34,ship.x,ship.y)
 			end
 		end
@@ -756,31 +767,27 @@ function draw_game()
 		drwmyspr(mybul)
 	end
 	--drawing borg
-	for myen in all(borgships) do
+	for myen in all(enemies) do
 		if myen.flash>0 then
 			myen.flash-=1
 			for i=1,15 do
 				pal(i,7)
 			end
-		end	
+		end
+		if myen.flash1>0 then
+			myen.flash1-=1
+			for i=1,15 do
+				pal(i,11)
+			end
+		end		 
+		
 		drwmyspr(myen)
 		pal()
 	end
 
-	for myen in all(sm_pyra) do
-		if myen.flash>0 then
-			myen.flash-=1
-			for i=1,15 do
-				pal(i,7)
-			end
-		end	
-		drwmyspr(myen)
-		pal()
-	end		
 	--muzzle flash
 	if muzzle>0 then
 		circfill(ship.x+2,ship.y-1,muzzle,12)
-	
 	end	
 	
 	if muzzle2>0 then
@@ -847,7 +854,7 @@ function draw_game()
 	--ending taunt message
 	if delay<110 then
 		print("you only got",25,45,11)
-		print(borgkills,75,45,8)
+		print(kills,75,45,8)
 		print("kills!",84,45,11)
 	end
 	--lcars ui for torpedoes
@@ -945,7 +952,7 @@ function draw_game()
 		end
 	end
 	
-	--borgkills
+	--kills
 	pal(12,13)
 	spr(104,0,0)
 	
@@ -964,7 +971,7 @@ function draw_game()
 	
 	pal(7,8)
 	pal(6,2)
-	dis_spr(borgkills,4)
+	dis_spr(kills,4)
 	pal()
 	
 	
@@ -1071,31 +1078,35 @@ function spawnwave1()
 sfx(28)
 t+=1
 	if wave==1 then
+	atkfreq=60
 	placeens({
-		{0,1,1,0,0,0,0,1,1,0},
-		{0,1,1,0,0,0,0,1,1,0},
-		{0,1,1,0,0,0,0,1,1,0},
-		{0,1,1,0,0,0,0,1,1,0}
+		{1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1}
 	})
 	end
 	
 	if wave==2 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{1,1,1,1,1,1,1,1,1,2},
 		{1,1,1,1,1,1,1,1,1,1},
 		{1,1,1,1,1,1,1,1,1,1},
-		{1,2,1,2,1,1,2,1,1,1}
+		{1,2,2,2,2,2,2,2,2,2}
 	})
 	end	
 	if wave==3 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{3,3,2,2,2,2,2,2,3,3},
 		{2,1,1,1,1,1,1,1,1,2},
 		{2,1,1,1,1,1,1,1,1,2},
-		{2,2,2,2,2,2,2,2,2,2}
+		{3,3,3,3,3,3,3,3,3,3}
 	})
 	end
 	if wave==4 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{3,3,3,3,3,3,3,3,3,3},
 		{1,1,1,1,1,1,1,1,1,1},
@@ -1104,6 +1115,7 @@ t+=1
 	})		
 	end
 	if wave==5 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{4,4,4,4,4,4,4,4,4,4},
 		{0,4,4,4,4,4,0,4,4,4},
@@ -1113,24 +1125,17 @@ t+=1
 	end
 	
 	if wave==6 and wavetime<=0 then
+	atkfreq=60
 	placeens({
-		{3,1,3,1,3,1,3,1,1,1},
-		{1,3,1,3,1,3,1,3,3,3},
-		{0,4,4,4,4,4,4,4,0,0},
-		{2,2,2,2,2,2,2,2,2,2}
-	})
-	end
-	
-	if wave==6 and wavetime<=0 then
-	placeens({
-		{0,0,0,4,4,4,4,1,0,5},
-		{0,0,0,3,3,3,3,1,0,0},
-		{0,0,0,4,4,4,4,1,0,5},
-		{0,0,0,3,3,3,3,1,0,0}
+		{5,0,0,0,5,0,0,0,0,5},
+		{0,0,5,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0},
+		{3,3,3,3,3,3,3,3,3,3}
 	})
 	end
 	
 	if wave==7 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{0,0,0,0,6,0,0,0,0,0},
 		{6,0,0,0,0,0,0,6,0,0},
@@ -1140,6 +1145,7 @@ t+=1
 	end
 	
 	if wave==8 and wavetime<=0 then
+	atkfreq=60
 	placeens({
 		{0,0,0,0,7,0,0,0,0,0},
 		{0,0,0,0,0,0,0,0,0,0},
@@ -1189,23 +1195,23 @@ function spawnen(entype,enx,eny,enwait)
 		myen.posx=enx
 		myen.posy=eny
 		
+		myen.anispd=0.4
+		
 		myen.wait=enwait
+		
+		myen.type=entype
 		
 	if entype==nil or entype==1 then
 		--borg probe
 		myen.spr=68
-		myen.hp=1
-		myen.type=1
-		myen.sy=rnd(1)+1.25
+		myen.hp=2
 		myen.ani={68,69,70,71}
 		myen.colw=5
 		myen.colh=6
 	elseif entype==2 then
 		-- sphere
 		myen.spr=84
-		myen.hp=5
-		myen.type=2
-	--	myen.sy=rnd(1)+0.75
+		myen.hp=3
 		myen.ani={84,85,86,87}
 		myen.colw=8
 		myen.colh=8
@@ -1213,21 +1219,16 @@ function spawnen(entype,enx,eny,enwait)
 		-- med borg cube
 		myen.spr=50
 		myen.hp=7
-		myen.type=3
-		myen.sy=rnd(0.50)+0.50
 		myen.ani={50,51,52,53}
 	elseif entype==4 then
 		-- pyramid
 		myen.spr=100
-		myen.hp=5
-		myen.sy=rnd(0.5)+0.15	
+		myen.hp=5	
 		myen.ani={100,101,102,103}
-		
 	elseif entype==5 then
 		-- mini boss-assimilated fed
 		myen.spr=70
 		myen.hp=15
-		myen.sy=rnd(2)+1.25
 		myen.ani={72,74,76}
 		myen.sprw=2
 		myen.sprh=2
@@ -1237,7 +1238,6 @@ function spawnen(entype,enx,eny,enwait)
 		-- large cube	- main boss?
 		myen.spr=64
 		myen.hp=20
-		myen.sy=rnd(0.25)+rnd(0.5)
 		myen.ani={64}
 		myen.sprw=4
 		myen.sprh=4
@@ -1247,14 +1247,13 @@ function spawnen(entype,enx,eny,enwait)
 		-- invader sphere - doesn't exist.	
 		myen.spr=128
 		myen.hp=100
-		myen.sy=-0.01
 		myen.ani={128}
 		myen.sprw=4
 		myen.sprh=4
 		myen.colw=32
 		myen.colh=32 			
 	end
-	add(borgships,myen)
+	add(enemies,myen)
 end
 
 
@@ -1280,8 +1279,68 @@ function doenemy(myen)
 		--wait for collective
 		
 	elseif myen.mission=="assim" then
-		--assimilate
-		myen.y+=1
+		--you will be assimilated.
+		
+		--borg probe
+		if myen.type==1 then
+			myen.sy=1.7
+			myen.sx=sin(t/45)
+			
+			-- just tweaks
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+			--sphere
+		elseif myen.type==2 then
+			myen.sy=2
+			local t3=0
+			t3=t+10
+			if myen.y==ship.y or myen.y==ship.y-1 or myen.y==ship.y+1 then
+				if myen.x>=ship.x then
+					if t3>t then
+						myen.sy=0
+						myen.sx=-3
+					elseif t3>t then
+						myen.sy=1
+					end	
+				elseif myen.x<=ship.x then
+					if t3>t then
+						myen.sy=0
+						myen.sx=3	
+					elseif t3>t then
+						myen.sy=1
+					end				
+				end	
+			end		
+			--med borg cube
+		elseif myen.type==3 then
+			myen.sy=2.5
+			myen.sx=sin(t/20)
+			-- just tweaks
+			if myen.x<32 then
+				myen.sx+=1-(myen.x/32)
+			end
+			
+			if myen.x>88 then
+				myen.sx-=(myen.x-88)/32
+			end
+		
+			--pyramid
+		elseif myen.type==4 then
+			--assimilated fed
+		elseif myen.type==5 then		
+			--large cube
+		elseif myen.type==6 then
+			--invader
+		elseif myen.type==7 then
+					
+		end	
+			
+		move(myen)
 
 	end
 	
@@ -1292,12 +1351,25 @@ function picking()
 		return
 	end	
 	
-	if t%60==0 then
-		local myen=rnd(borgships)
+	if t%atkfreq==0 then
+		local maxnum=min(10,#enemies)
+		local myindex=flr(rnd(maxnum))
+		
+		myindex=#enemies-myindex
+		
+		local myen=enemies[myindex]
 		if myen.mission=="protec" then
 			myen.mission="assim"
+			myen.anispd*=3
+			myen.flash1=4
+			myen.wait=60
 		end
 	end	
+end
+
+function move(obj)
+	obj.x+=obj.sx
+	obj.y+=obj.sy
 end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
