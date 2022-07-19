@@ -32,7 +32,7 @@ function _update()
 	elseif mode=="cutscene1" then
 		update_cut1()
 	elseif mode=="wavetxt" then
-		draw_wavetxt()	
+		update_wavetxt()	
 	elseif mode =="win" then
 		update_win()		
 	end		
@@ -48,7 +48,7 @@ function _draw()
 	elseif mode=="cutscene1" then
 		draw_cut1()
 	elseif mode=="wavetxt" then
-		update_wavetxt()	
+		draw_wavetxt()	
 	elseif mode =="win" then
 		draw_win()			
 	end
@@ -70,7 +70,6 @@ function startgame()
 	ship.sx=1
 	ship.sy=1
 	ship.spr=18
-	ship.shake=0
 	
 	--starting game conditions
 	bul2cnt=3
@@ -102,18 +101,7 @@ function startgame()
 	
 	buls={}
 	buls2={}	
-	
-	local pulse={}
-	pulse.x=130
-	pulse.y=130
-	pulse.spr=116
-	add(buls,pulse)
-	
-	local qtor={}
-	qtor.x=130
-	qtor.y=130
-	qtor.spr=34
-	add(buls2,qtor)
+	ebuls={}
 	
 	enemies={}
 	
@@ -217,10 +205,10 @@ function drwmyspr(myspr)
 	--throws nil value error
 	--seems to be related with
 	--drawing player ship.
-	--if myspr.shake>=0 then
-	--	myspr.shake-=1
-	--	sprx+=sin(t/20)
-	--end	
+	if myspr.shake>=0 then
+	myspr.shake-=1
+		sprx+=sin(t/20)
+	end	
 	spr(myspr.spr,sprx,spry,myspr.sprw,myspr.sprh)
 end
 --blink and you're dead
@@ -457,6 +445,8 @@ function update_game()
 			newbul.y=ship.y-1
 			newbul.spr=16
 			newbul.colw=4
+			newbul.sx=0
+			newbul.sy=-4
 			muzzle2=2
 			add(buls,newbul)
 			sfx(0)
@@ -475,6 +465,8 @@ function update_game()
 			newbul.y=ship.y-3
 			newbul.spr=36
 			newbul.colw=7
+			newbul.sx=0
+			newbul.sy=-6
 			add(buls2,newbul)
 			sfx(1)
 			muzzle=4
@@ -507,7 +499,7 @@ function update_game()
 
 	--pulse phasers movement
 	for mybul in all(buls) do
-		mybul.y-=4
+		move(mybul)
 		
 		if mybul.y<-8 then
 			del(buls,mybul)
@@ -515,8 +507,8 @@ function update_game()
 	end
 	--torpedo movement
 	for mybul in all(buls2) do
-	
-		mybul.y-=8
+		move(mybul)
+		
 		mybul.spr+=0.25
 		if mybul.spr>=40 then
 			mybul.spr=36
@@ -527,17 +519,22 @@ function update_game()
 		end
 	end
 	
+	--move the ebuls
+	for myebul in all(ebuls) do
+		move(myebul)
+		animate(myebul)
+
+		if myebul.y>128 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
+			del(ebuls,myebul)
+		end
+	end
+	
 	-- move borg
 	for myen in all(enemies) do
 	--enemy mission
 		doenemy(myen)
 		--enemy animation
-		myen.aniframe+=myen.anispd
-		if flr(myen.aniframe)>#myen.ani then
-			myen.aniframe=1
-		end
-		myen.spr=myen.ani[flr(myen.aniframe)]
-	
+		animate(myen)
 		--enemy leaving screen
 		if myen.mission!="flyin" then
 			if myen.y>128 or myen.x<-8 or myen.x>128 then
@@ -611,11 +608,22 @@ function update_game()
 				sfx(2)		
 			end
 		end		
-		end
+	end
 	else 
 		invul-=1		
 	end
-	
+	-- coll x ebuls
+	if invul<=0 then
+		for myebul in all(ebuls) do
+			if col(myebul,ship) and ded<=0 then
+				sfx(2)
+				shields-=1
+				invul=45
+				sparks(ship.x,ship.y)
+				explodes(ship.x,ship.y,true)
+			end		
+		end
+	end
 	-- number of kills
 	-- to get free torp
 	if parttor>=5 then
@@ -842,6 +850,14 @@ function draw_game()
 			end
 		end
 	end
+	
+	for myebul in all (ebuls) do
+		pal(12,11)
+		pal(1,3)
+		drwmyspr(myebul)
+		pal()
+	end	
+	
 	
 	--don't draw things below here	
 	--ui elements
@@ -1359,10 +1375,13 @@ function picking()
 		
 		local myen=enemies[myindex]
 		if myen.mission=="protec" then
-			myen.mission="assim"
-			myen.anispd*=3
-			myen.flash1=4
-			myen.wait=60
+		myen.mission="assim"
+		fire(myen)
+		myen.anispd*=3
+		myen.flash1=4
+		myen.wait=60
+		myen.shake=60
+		
 		end
 	end	
 end
@@ -1370,6 +1389,30 @@ end
 function move(obj)
 	obj.x+=obj.sx
 	obj.y+=obj.sy
+end
+
+function animate(myen)
+	myen.aniframe+=myen.anispd
+	if flr(myen.aniframe)>#myen.ani then
+		myen.aniframe=1
+	end
+	myen.spr=myen.ani[flr(myen.aniframe)]
+end
+-->8
+--bullets
+
+function fire(myen)
+	local myebul=makespr()
+	myebul.x=myen.x
+	myebul.y=myen.y+1
+	myebul.spr=36
+	myebul.ani={36,37,38,39,36}
+	myebul.anispd=0.75
+	myebul.sy=1.5
+	myebul.colw=4
+	myebul.colh=4
+	myen.flash1=4
+	add(ebuls,myebul)
 end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
