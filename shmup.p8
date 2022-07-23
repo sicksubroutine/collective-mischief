@@ -1305,7 +1305,7 @@ function doenemy(myen)
 			myen.sx=sin(t/75)+0.5
 			if myen.wait1==0 then
 				fire(myen)
-				myen.wait1=myen.wait1+10
+				myen.wait1=myen.wait1+25
 			end
 			myen.wait1-=1
 			-- just tweaks
@@ -1404,8 +1404,8 @@ function pickfire()
 	local myen=enemies[myindex]
 	if myen.mission=="protec" then
 		fire(myen)
-		testx=nil
-		testy=nil
+		tar1x=nil
+		tar1y=nil
 	elseif myen==nil then return end
 end
 
