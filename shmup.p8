@@ -4,7 +4,6 @@ __lua__
 --tng music by phlox
 --shmup tutorial by lazy devs
 --star trek shmup by chaz(🐱)
--- testing git
 --todo
 -------------
 -- nicer screens
@@ -76,7 +75,7 @@ function startgame()
 	
 	--starting game conditions
 	shields=5
-	bul2cnt=3
+	bul2cnt=100
 	--
 	kills=0
 	parttor=0
@@ -469,18 +468,11 @@ function update_game()
 			torout=50
 			sfx(4)
 		end	
-		if btimer2<=0 and bul2cnt>=0.24 and torout<0 then
-			local newbul=makespr()
-			newbul.x=ship.x-1
-			newbul.y=ship.y-3
-			newbul.spr=36
-			newbul.colw=7
-			newbul.sx=0
-			newbul.sy=-6
-			add(buls2,newbul)
+		if btimer2<=0 and bul2cnt>=3.24 and torout<0 then
+			
+			tor_spread(ship,3,1.5,time()/32)
 			sfx(1)
 			muzzle=4
-			bul2cnt-=1
 			btimer2=20
 		end
 	end
@@ -1095,10 +1087,10 @@ t+=1
 	if wave==2 and wavetime<=0 then
 	atkfreq=60
 	placeens({
-		{2,1,1,1,1,1,1,1,1,2},
-		{2,1,1,1,1,1,1,1,1,2},
-		{2,1,1,1,1,1,1,1,1,2},
-		{2,1,1,1,1,1,1,1,1,2}
+		{2,2,2,2,2,2,2,2,2,2},
+		{1,1,1,1,1,1,1,1,1,1},
+		{2,2,2,2,2,2,2,2,2,2},
+		{1,1,1,1,1,1,1,1,1,1}
 	})
 	end	
 	if wave==3 and wavetime<=0 then
@@ -1295,7 +1287,7 @@ function doenemy(myen)
 			myen.sy=0.95
 			myen.sx=sin(t/75)+0.5
 			if t%25==0 then
-				firespread(myen,1,1,0)
+				fireshotmod(myen,3,1.25,time()/16)
 			end
 		
 			-- just tweaks
@@ -1346,17 +1338,29 @@ function doenemy(myen)
 			end		
 			--large cube
 		elseif myen.type==6 then
+			if t%15==0 then	
+				fireshotmod(myen,5,0.75,time()/32)
+			end
+		
 			--invader
 		elseif myen.type==7 then
-			
 			if myen.y>90 then
-				myen.sy=-0.5
-			elseif myen.y<20 then
+				myen.sy=-0.5	
+			elseif myen.y<50 then
 				myen.sy=0.25
 			end	
-				if t%30==0 then	
-					firespread(myen,30,1.25,time()/16)
-				end			
+			
+			--if t%15==0 then	
+			--	fireshotmod(myen,2,0.75,time()/32)
+			--end
+			
+			if t%30==0 then	
+				fireshotgun(myen,15,1.5,time()/8)
+			end
+							
+			if t%45==0 then	
+				firespread(myen,25,1.25,time()/8)
+			end
 				
 		end	
 		move(myen)
@@ -1438,13 +1442,17 @@ end
 function fire(myen,ang,spd)
 	
 	local myebul=makespr()
-	local angle=0
+	local	tar1x=ship.x+2
+	local	tar1y=ship.y+2
+	local	tar2x=myen.x
+	local	tar2y=myen.y
+	local angle=atan2(tar1y-tar2y,tar1x-tar2x)
+	
 	myebul.x=myen.x
 	myebul.y=myen.y+2
 	myebul.spr=36
 	myebul.ani={36,37,38,39,36}
 	myebul.anispd=0.75
-	
 	
 	myebul.sx=sin(ang)*spd
 	myebul.sy=cos(ang)*spd
@@ -1459,15 +1467,10 @@ function fire(myen,ang,spd)
 		myebul.y=myen.y+15
 	end
 	
-	if myen.type==1 then
-		tar1x=ship.x+2
-		tar1y=ship.y+2
- 	tar2x=myen.x
-		tar2y=myen.y
-	 angle=atan2(tar1y-tar2y,tar1x-tar2x)	
-		myebul.sx=sin(angle)
-		myebul.sy=cos(angle)
-	end
+	--if myen.type==1 then
+	--	myebul.sx=sin(angle)
+	--	myebul.sy=cos(angle)
+	--end
 	
 	add(ebuls,myebul)
 	
@@ -1482,7 +1485,48 @@ function firespread(myen,num,spd,base)
 		fire(myen,1/num*i+base,spd)
 	end	
 	
+end
+
+function fireshotgun(myen,num,spd,base)
+ 
+	for i=1,num do
+		fire(myen,rnd(.10)%base-0.03,spd)
+	end	
 	
+end
+
+function fireshotmod(myen,num,spd,base)
+ 
+	for i=1,num do
+		fire(myen,rnd()%1,spd)
+	end	
+	
+end
+
+function tor_fire(newbul,ang,spd,num)
+	local newbul=makespr()
+	newbul.x=ship.x-1
+	newbul.y=ship.y-3
+	newbul.spr=36
+	newbul.colw=7
+	newbul.sx=0
+	newbul.sy=6
+	
+	
+	newbul.sx=sin(ang)*spd
+	newbul.sy=cos(ang)*spd
+	add(buls2,newbul)
+end
+
+function tor_spread(ship,num,spd,base)
+	local b={0.15,0.05,0.25}
+	bul2cnt=bul2cnt-num
+	for i=1,num do
+		
+		for x,v in all(b) do
+			tor_fire(ship,x+0.35,spd,num)
+		end
+	end	
 end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
