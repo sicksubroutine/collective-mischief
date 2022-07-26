@@ -248,14 +248,14 @@ function col(a,b)
 end
 
 function sparks(expx,expy)
-	for i=1,3 do
+	for i=1,4 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
 		myp.sx=(rnd()-1)*10
 		myp.sy=(rnd()-1)*10
 		myp.age=rnd(2)
-		myp.maxage=7+rnd(10)--sizeofex
+		myp.maxage=9+rnd(10)--sizeofex
 		myp.size=1
 		add(parts2,myp)
 	end
@@ -291,7 +291,7 @@ function explodes(expx,expy,isblue)
 	end
 	
 	--sparks
-	for i=1,3 do
+	for i=1,2 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
@@ -427,24 +427,23 @@ function update_game()
 	ship.spr=18
 	muzzle=0
 	muzzle2=0
-	
 	--left
 	if btn(0) and ded<=0 then
-		ship.sx=-2
+		ship.sx=-1
 		ship.spr=17
 	end
 	--right
 	if btn(1) and  ded<=0 then
-		ship.sx=2
+		ship.sx=1
 		ship.spr=19
 	end
 	--up
 	if btn(2) and ded<=0 then
-		ship.sy=-2
+		ship.sy=-1.25
 	end
 	--down
 	if btn(3) and ded<=0 then
-		ship.sy=2
+		ship.sy=1.25
 	end	
 	--controls phasers o
 	if btn(5) and ded<=0 then
