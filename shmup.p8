@@ -18,6 +18,7 @@ function _init()
 	blinkt=1
 	t=0
 	lockout=0
+	shake=0
 end
 
 function _update()
@@ -39,6 +40,9 @@ function _update()
 end
 
 function _draw()
+	
+	doshake()
+	
 	if mode=="game" then
 		draw_game()
 	elseif mode=="start" then
@@ -53,11 +57,10 @@ function _draw()
 		draw_win()			
 	end
 		
+		camera()
 end
 
 function startgame()
-	
-	
 	mode="wavetxt"
 	
 	wave=0
@@ -76,6 +79,8 @@ function startgame()
 	--starting game conditions
 	shields=5
 	bul2cnt=100
+	pulse_p=0.05
+	q_tor=5
 	--
 	kills=0
 	parttor=0
@@ -106,14 +111,11 @@ function startgame()
 	buls={}
 	buls2={}	
 	ebuls={}
-	
 	enemies={}
-	
 	explode={}
-	
 	parts={}
 	parts2={}
-	
+	muh_lazer={}
 	shwaves={}
 end
 
@@ -262,7 +264,7 @@ function sparks(expx,expy)
 end
 
 function explodes(expx,expy,isblue)
-
+	
 	local myp={}
 	myp.x=expx+4--xpos
 	myp.y=expy+4--ypos
@@ -322,7 +324,6 @@ function page_red(page)
 	if page>15 then
 		col=5
 	end
-	
 	return col	
 end
 
@@ -415,6 +416,21 @@ function makespr()
 	return myspr
 end
 
+function doshake()
+	local shakex=rnd(shake)-(shake/2)
+	local shakey=rnd(shake)-(shake/2)
+	
+	camera(shakex,shakey)
+	
+	if shake>10 then
+		shake*=0.9
+	else	
+		shake-=1
+		if shake<1 then
+			shake=0
+		end
+	end			
+end
 
 -->8
 -- update functions
@@ -556,13 +572,9 @@ function update_game()
 	for myen in all(enemies) do
 		for mybul in all(buls2) do
 			if col(myen,mybul) and ded<=0 then
-				del(buls2,mybul)
-				sfx(3)
-				myen.y=myen.y-0.3
-				myen.hp-=5
-				myen.flash=2
-				sparks(myen.x,myen.y)
 				smol_shwave(mybul.x,mybul.y)
+				applydam(myen,mybul,"qtor")
+				del(buls,mybul)
 				if myen.hp<=0 then
 					killen(myen)
 				end
@@ -570,18 +582,13 @@ function update_game()
 		end		
 	end
 	
-	-- collision borg x phasers
+	-- collision borg x pulse_phasers
 	for myen in all(enemies) do
 		for mybul in all(buls) do
 			if col(myen,mybul) and ded<=0 then
+				smol_shwave(mybul.x,mybul.y)
+				applydam(myen,mybul,"pulse")
 				del(buls,mybul)
-				smol_shwave(mybul.x,mybul.y)
-				sfx(3)
-				myen.y=myen.y-0.1
-				myen.hp-=1.05
-				myen.flash=2
-				sparks(myen.x,myen.y)
-				smol_shwave(mybul.x,mybul.y)
 				if myen.hp<=0 then
 					killen(myen)
 				end
@@ -593,13 +600,10 @@ function update_game()
 	if invul<=0 then
 		for myen in all(enemies) do
 			if col(myen,ship) and ded<=0 then
+				applydam(myen,mybul,"ram")
 				sfx(2)
-				myen.hp-=3
-				myen.flash=2
-				shields-=1
-				invul=45
 				sparks(ship.x,ship.y)
-				sparks(myen.x,myen.y)
+				
 				explodes(ship.x,ship.y,true)
 			if myen.hp<=0 then	
 				killen(myen)	
@@ -616,6 +620,7 @@ function update_game()
 				sfx(2)
 				shields-=1
 				invul=45
+				shake=12
 				sparks(ship.x,ship.y)
 				explodes(ship.x,ship.y,true)
 			end		
@@ -659,7 +664,7 @@ function update_game()
 	end
 	animstars()
 
-	if mode=="game" and #enemies==0 and ded<=0 then
+	if mode=="game" and #enemies==0 and ded<=0 and wave!=8 then
 		nextwave()
 	end
 end
@@ -755,10 +760,10 @@ function draw_game()
 	if invul<=0 then
 		drwmyspr(ship)	
 		else
-			if invul<=0 and ded==1 then
+		if invul<=0 and ded==1 then
 			
-			elseif invul>0 and ded<=0 then
-				if sin(t/5)<0 then
+		elseif invul>0 and ded<=0 then
+			if sin(t/5)<0 then
 				spr(34,ship.x,ship.y)
 			end
 		end
@@ -1189,16 +1194,12 @@ function spawnen(entype,enx,eny,enwait)
 		myen.x=enx*1.5-32
 		myen.y=eny-35
 		myen.mission="flyin"
-		
 		myen.posx=enx
 		myen.posy=eny
-		
 		myen.anispd=0.4
 		
 		myen.wait=enwait
-		
 		myen.type=entype
-		
 
 	if entype==nil or entype==1 then
 		--borg probe
@@ -1303,13 +1304,13 @@ function doenemy(myen)
 			local	tar1y=ship.y+4
 			local	tar2x=myen.x
 	  local	tar2y=myen.y
-			if ship.y-myen.y<8 then 
+			if ship.y-myen.y<10 then 
 				myen.sx=0
 				myen.sy=2 
 			else
 				angle=atan2(tar1y-tar2y,tar1x-tar2x)
-				myen.sx=sin(angle)-0.5
-				myen.sy=cos(angle)-0.5
+				myen.sx=sin(angle)-0.99
+				myen.sy=cos(angle)-0.75
 			end
 			if t%30==0 then
 					firespread(myen,5,1,time()/32)
@@ -1337,9 +1338,17 @@ function doenemy(myen)
 			end		
 			--large cube
 		elseif myen.type==6 then
-			if t%15==0 then	
-				fireshotmod(myen,5,0.75,time()/32)
+			if t%15==0 then
+				aimedfire(myen,2)
+				
+					
+				--fireshotmod(myen,5,0.75,time()/32)
 			end
+			if myen.y>90 then
+				myen.sy=-0.5	
+			elseif myen.y<50 then
+				myen.sy=0.25
+			end	
 		
 			--invader
 		elseif myen.type==7 then
@@ -1406,7 +1415,7 @@ function pickfire()
 	local myen=enemies[myindex]
 	if myen==nil then return
 	elseif myen.mission=="protec" then
-		firespread(myen,1,0.75,time()/8)
+		--firespread(myen,1,0.75,time()/8)
 	end
 end
 
@@ -1429,6 +1438,9 @@ function killen(myen)
 	sfx(2)
 	kills+=1
 	parttor+=1.125
+	if myen.type==7 then
+		shake+=30
+	end
 	if myen.mission=="assim" then
 		if rnd()<0.75 then
 			pickattack()
@@ -1441,11 +1453,6 @@ end
 function fire(myen,ang,spd)
 	
 	local myebul=makespr()
-	local	tar1x=ship.x+2
-	local	tar1y=ship.y+2
-	local	tar2x=myen.x
-	local	tar2y=myen.y
-	local angle=atan2(tar1y-tar2y,tar1x-tar2x)
 	
 	myebul.x=myen.x
 	myebul.y=myen.y+2
@@ -1465,16 +1472,14 @@ function fire(myen,ang,spd)
 		myebul.x=myen.x+15
 		myebul.y=myen.y+15
 	end
-	
-	--if myen.type==1 then
-	--	myebul.sx=sin(angle)
-	--	myebul.sy=cos(angle)
-	--end
+	if myen.type==6 then
+		myebul.x=myen.x+15
+		myebul.y=myen.y+15
+	end
 	
 	add(ebuls,myebul)
-	
 	sfx(37)
-
+	return myebul
 	
 end
 
@@ -1521,6 +1526,34 @@ function tor_spread(ship,num,spd,base)
 	for i=1,num do
 		tor_fire(ship,0.30+b*i,spd)
 	end	
+end
+
+function aimedfire(myen,spd)
+	local myebul=fire(myen,0,spd)
+	local ang=atan2(ship.y-(myebul.y),ship.x-(myebul.x))
+	myebul.sx=sin(ang)*spd
+	myebul.sy=cos(ang)*spd
+	--fire(myen,ang,spd)
+end
+
+function applydam(myen,mybul,kind)
+	sfx(3)
+	sparks(myen.x,myen.y)
+	myen.y=myen.y-1
+	myen.flash=2
+	if kind=="pulse" then
+		myen.hp-=pulse_p
+	elseif kind=="qtor" then
+		myen.hp-=q_tor
+	elseif kind=="ram" then
+		myen.hp-=3
+		shields-=1
+		invul=45
+		shake=8
+		sparks(myen.x,myen.y)
+	end	
+	return myen
+	
 end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
