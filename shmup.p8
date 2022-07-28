@@ -2,11 +2,11 @@ pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
 --tng music by phlox
-
+--shmup tutorial by lazy devs
+--star trek shmup by chaz(🐱)
 --todo
 -------------
 -- nicer screens
--- enemy bull spreadshot
 -- enemy spawn location
 -- pickups
 
@@ -17,8 +17,7 @@ function _init()
 	blinkt=1
 	t=0
 	lockout=0
-	tarx=nil
-	tary=nil
+	shake=0
 end
 
 function _update()
@@ -40,6 +39,9 @@ function _update()
 end
 
 function _draw()
+	
+	doshake()
+	
 	if mode=="game" then
 		draw_game()
 	elseif mode=="start" then
@@ -54,13 +56,12 @@ function _draw()
 		draw_win()			
 	end
 		
+		camera()
 end
 
 function startgame()
-	
-	
 	mode="wavetxt"
-	--music(1)
+	
 	wave=0
 	t=0
 	nextwave()
@@ -75,17 +76,20 @@ function startgame()
 	ship.spr=18
 	
 	--starting game conditions
-	bul2cnt=3
+	shields=5
+	bul2cnt=100
+	pulse_p=0.05
+	q_tor=5
+	--
+	kills=0
 	parttor=0
 	muzzle=0
 	muzzle2=0
 	torspr=0
-	shields=5
 	invul=0
 	btimer=0
 	btimer2=0
 	torout=0
-	kills=0
 	delay=120
 	ded=0
 	faceanim=224
@@ -106,19 +110,18 @@ function startgame()
 	buls={}
 	buls2={}	
 	ebuls={}
-	
 	enemies={}
-	
 	explode={}
-	
 	parts={}
 	parts2={}
-	
+	muh_lazer={}
 	shwaves={}
 end
 
 function startcut1()
 	mode="cutscene1"
+
+	parts2={}
 end
 
 function startscreen()
@@ -212,10 +215,7 @@ function drwmyspr(myspr)
 			sprx+=1.25
 		end
 	end
-	if bulmode then
-		sprx-=2
-		spry-=2
-	end		
+	
 	spr(myspr.spr,sprx,spry,myspr.sprw,myspr.sprh)
 end
 --blink and you're dead
@@ -249,21 +249,21 @@ function col(a,b)
 end
 
 function sparks(expx,expy)
-	for i=1,3 do
+	for i=1,4 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
 		myp.sx=(rnd()-1)*10
 		myp.sy=(rnd()-1)*10
 		myp.age=rnd(2)
-		myp.maxage=7+rnd(10)--sizeofex
+		myp.maxage=9+rnd(10)--sizeofex
 		myp.size=1
 		add(parts2,myp)
 	end
 end
 
 function explodes(expx,expy,isblue)
-
+	
 	local myp={}
 	myp.x=expx+4--xpos
 	myp.y=expy+4--ypos
@@ -292,7 +292,7 @@ function explodes(expx,expy,isblue)
 	end
 	
 	--sparks
-	for i=1,3 do
+	for i=1,2 do
 		local myp={}
 		myp.x=expx+4
 		myp.y=expy+4
@@ -323,7 +323,6 @@ function page_red(page)
 	if page>15 then
 		col=5
 	end
-	
 	return col	
 end
 
@@ -407,7 +406,7 @@ function makespr()
 	myspr.flash=0
 	myspr.flash1=0
 	myspr.aniframe=1
-	myspr.time=0
+	myspr.age=0
 	myspr.spr=0
 	myspr.sprw=1
 	myspr.sprh=1
@@ -415,6 +414,23 @@ function makespr()
 	myspr.colh=8
 	return myspr
 end
+
+function doshake()
+	local shakex=rnd(shake)-(shake/2)
+	local shakey=rnd(shake)-(shake/2)
+	
+	camera(shakex,shakey)
+	
+	if shake>10 then
+		shake*=0.9
+	else	
+		shake-=1
+		if shake<1 then
+			shake=0
+		end
+	end			
+end
+
 -->8
 -- update functions
 function update_game()
@@ -426,24 +442,24 @@ function update_game()
 	ship.spr=18
 	muzzle=0
 	muzzle2=0
-	
 	--left
+	local shipsd=1.30
 	if btn(0) and ded<=0 then
-		ship.sx=-2
+		ship.sx=-shipsd+rnd(0.25)-0.05
 		ship.spr=17
 	end
 	--right
 	if btn(1) and  ded<=0 then
-		ship.sx=2
+		ship.sx=shipsd+rnd(0.25)-0.05
 		ship.spr=19
 	end
 	--up
 	if btn(2) and ded<=0 then
-		ship.sy=-2
+		ship.sy=-shipsd+rnd(0.25)-0.05
 	end
 	--down
 	if btn(3) and ded<=0 then
-		ship.sy=2
+		ship.sy=shipsd+rnd(0.25)-0.05
 	end	
 	--controls phasers o
 	if btn(5) and ded<=0 then
@@ -467,18 +483,11 @@ function update_game()
 			torout=50
 			sfx(4)
 		end	
-		if btimer2<=0 and bul2cnt>=0.24 and torout<0 then
-			local newbul=makespr()
-			newbul.x=ship.x-1
-			newbul.y=ship.y-3
-			newbul.spr=36
-			newbul.colw=7
-			newbul.sx=0
-			newbul.sy=-6
-			add(buls2,newbul)
+		if btimer2<=0 and bul2cnt>=3.24 and torout<0 then
+			
+			tor_spread(ship,3,1.5,time()/32)
 			sfx(1)
 			muzzle=4
-			bul2cnt-=1
 			btimer2=20
 		end
 	end
@@ -535,21 +544,20 @@ function update_game()
 		if myebul.y>128 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
 			del(ebuls,myebul)
 		end
-		myebul.time+=1
-	if myebul.time>200 then
-		del(ebuls,myebul)
-	end	
-
-	if delbul==1 and myebul.time==nil then return
-	elseif delbul==1 and myebul.time>=200 then	delbul=0 del(ebuls,myebul) end	
-	
+		myebul.age+=1
+		if myebul.age>200 then
+			del(ebuls,myebul)
+		end
+		if delbul==1 and myebul.age==nil then return
+		elseif delbul==1 and myebul.age>=200 then	
+			delbul=0 del(ebuls,myebul)
+		end	
 	end
 	
 	-- move borg
 	for myen in all(enemies) do
 	--enemy mission
 		doenemy(myen)
-		--enemy animation
 		animate(myen)
 		--enemy leaving screen
 		if myen.mission!="flyin" then
@@ -559,18 +567,13 @@ function update_game()
 			end
 		end
 	end
-	
 	-- collision borg x torpedoes
 	for myen in all(enemies) do
 		for mybul in all(buls2) do
 			if col(myen,mybul) and ded<=0 then
-				del(buls2,mybul)
-				sfx(3)
-				myen.y=myen.y-0.3
-				myen.hp-=5
-				myen.flash=2
-				sparks(myen.x,myen.y)
 				smol_shwave(mybul.x,mybul.y)
+				applydam(myen,mybul,"qtor")
+				del(buls2,mybul)
 				if myen.hp<=0 then
 					killen(myen)
 				end
@@ -578,18 +581,13 @@ function update_game()
 		end		
 	end
 	
-	-- collision borg x phasers
+	-- collision borg x pulse_phasers
 	for myen in all(enemies) do
 		for mybul in all(buls) do
 			if col(myen,mybul) and ded<=0 then
+				smol_shwave(mybul.x,mybul.y)
+				applydam(myen,mybul,"pulse")
 				del(buls,mybul)
-				smol_shwave(mybul.x,mybul.y)
-				sfx(3)
-				myen.y=myen.y-0.1
-				myen.hp-=1.05
-				myen.flash=2
-				sparks(myen.x,myen.y)
-				smol_shwave(mybul.x,mybul.y)
 				if myen.hp<=0 then
 					killen(myen)
 				end
@@ -601,13 +599,10 @@ function update_game()
 	if invul<=0 then
 		for myen in all(enemies) do
 			if col(myen,ship) and ded<=0 then
+				applydam(myen,mybul,"ram")
 				sfx(2)
-				myen.hp-=3
-				myen.flash=2
-				shields-=1
-				invul=45
 				sparks(ship.x,ship.y)
-				sparks(myen.x,myen.y)
+				
 				explodes(ship.x,ship.y,true)
 			if myen.hp<=0 then	
 				killen(myen)	
@@ -624,6 +619,7 @@ function update_game()
 				sfx(2)
 				shields-=1
 				invul=45
+				shake=12
 				sparks(ship.x,ship.y)
 				explodes(ship.x,ship.y,true)
 			end		
@@ -654,7 +650,7 @@ function update_game()
 		return
 	end
 	
-	--picking
+	--enemy picking function
 	picktimer()
 	
 	--animate muzzle flash
@@ -667,7 +663,7 @@ function update_game()
 	end
 	animstars()
 
-	if mode=="game" and #enemies==0 and ded<=0 then
+	if mode=="game" and #enemies==0 and ded<=0 and wave!=8 then
 		nextwave()
 	end
 end
@@ -759,14 +755,14 @@ function draw_game()
 	cls(0)
 	-- draw dem stars
 	star_start()	
-	-- draw ship
+	-- draw player ship
 	if invul<=0 then
 		drwmyspr(ship)	
 		else
-			if invul<=0 and ded==1 then
+		if invul<=0 and ded==1 then
 			
-			elseif invul>0 and ded<=0 then
-				if sin(t/5)<0 then
+		elseif invul>0 and ded<=0 then
+			if sin(t/5)<0 then
 				spr(34,ship.x,ship.y)
 			end
 		end
@@ -779,7 +775,7 @@ function draw_game()
 	for mybul in all(buls2) do
 		drwmyspr(mybul)
 	end
-	--drawing borg
+	--drawing enemies
 	for myen in all(enemies) do
 		if myen.flash>0 then
 			myen.flash-=1
@@ -863,7 +859,6 @@ function draw_game()
 		pal()
 	end	
 	
-	
 	--don't draw things below here	
 	--ui elements
 	
@@ -871,28 +866,34 @@ function draw_game()
 	--seconds since game start
 	--print(flr(t/30).." secs",100,95,8)
 	--print(flr(t).." frames",90,89,8)
-	if testx!=nil and testy!=nil then
-		print("testx "..testx.." "..testy.." testy",50,80,8)
-		print("x "..ship.x.." "..ship.y.." y",85,89,8)
-	end	
-	if testx!=nil and testy!=nil then
-		line(testx,testy,ship.x,ship.y,8)
-	end
+	
 	--ending taunt message
-	if delay<110 then
-		print("you only got",25,45,11)
-		print(kills,75,45,8)
-		print("kills!",84,45,11)
-	end
+		local kx=63
+	if delay<110 and kills==0 then
+		print("you got",25,kx,11)
+		print("zero kills",55,kx,8)
+	elseif delay<110 and kills==1 then
+		print("you only got",25,kx,11)
+		print("one",75,kx,8)
+		print("kill!",88,kx,11)
+	elseif delay<110 and kills>2 and kills<99 then
+		print("you only got",25,kx,11)
+		print(kills,75,kx,8)
+		print("kills!",84,kx,11)
+	elseif delay<110 and kills>99 then
+		print("you only got",25,kx,11)
+		print(kills,75,kx,8)
+		print("kills!",89,kx,11)
+	end	
 	--lcars ui for torpedoes
 	pal(12,8)
 	spr(123,8,119,2,1)
 	spr(104,0,119)
-	spr(120,24,119)
-	spr(120,32,119)
-	spr(120,40,119)
-	spr(120,48,119)
-	spr(120,55,119)
+	
+	for x=1,5 do
+		spr(120,16+8*x,119)
+	end
+		
 	spr(111,59,119)
 	
 	pal(7,8)
@@ -903,13 +904,9 @@ function draw_game()
 	
 	spr(104,69,119)
 	
-	spr(120,77,119)
-	spr(120,85,119)
-	spr(120,93,119)
-	spr(120,101,119)
-	spr(120,109,119)
-	spr(120,117,119)
-	spr(120,118,119)
+	for x=1,7 do
+		spr(120,69+7*x,119)
+	end
 	
 	spr(111,119,119)
 	pal()
@@ -935,12 +932,9 @@ function draw_game()
 	--lcars ui for shields
 	spr(104,0,111)
 	spr(105,9,111,4,1)
-	spr(109,37,111)
-	spr(109,43,111)
-	spr(109,49,111)
-	spr(109,55,111)
-	spr(109,61,111)
-	
+	for i=1,5 do
+		spr(109,31+i*6,111)
+	end
 	for i=1,5 do
 		if shields>=i then
 			spr(26,31+i*6,111)
@@ -949,15 +943,9 @@ function draw_game()
 	
 	pal(12,10)
 	spr(104,69,111)
-	
-	spr(120,77,111)
-	spr(120,85,111)
-	spr(120,93,111)
-	spr(120,101,111)
-	spr(120,109,111)
-	spr(120,117,111)
-	spr(120,118,111)
-	
+	for x=1,7 do
+		spr(120,69+7*x,111)
+	end
 	spr(111,119,111)
 	pal()
 	
@@ -973,13 +961,9 @@ function draw_game()
 	pal(12,13)
 	spr(104,0,0)
 	
-	spr(120,8,0)
-	spr(120,16,0)
-	spr(120,24,0)
-	spr(120,32,0)
-	spr(120,40,0)
-	spr(120,48,0)
-	spr(120,55,0)
+	for x=1,7 do
+		spr(120,8*x,0)
+	end
 	
 	spr(111,59,0)
 	pal()
@@ -1003,30 +987,19 @@ function draw_start()
 	cls(0)
 	starfield()
 	
-	spr(231,50,75,2,2)
+	spr(231,64,75,2,2)
+	spr(18,57,82)
 	
 	print("star trek:",25,25,8)
 	print("collective mischief",25,33,11)
-	--[[
-	--borg ship
-	spr(64,50,10,4,4)
-	spr(64,0,10,4,4)
-	spr(64,100,10,4,4)
-	spr(64,-10,50,4,4)
-	spr(64,110,50,4,4)
 	
 	--print("time to go assimilating!",17,80,8)
-	print("starring...",35,45,7)
-	print("the borg",43,55,11)
-	print("in",55,62,7)
-	print("collective mischief",28,69,11)
-	]]--
 	
-	
-	print("press x to begin killing borg",5,100,blink())
 end		
 function draw_over()
  	cls(0)
+	--REDO THIS:
+	--[[
  	--planet
 	spr(45,68,52,2,2)
 	--borg ship
@@ -1046,6 +1019,7 @@ function draw_over()
 	--lololol! n00b!
 	print("you have lost everything.",20,90,8)
 	print("the game is over!",34,100,8)
+	]]--
 end
 function draw_cut1()
 	
@@ -1061,15 +1035,17 @@ function draw_cut1()
 	spr(70,65,15)
 	spr(70,45,9)
 	
+	--[[
 	print("borg cubes",40,55,11)
 	print("are approaching",40,63,8)
 	print("earth!",40,70,12)
-	
-	print("these borg bastards",40,90,11)
-	print("are gonna     for",40,100,11)
-	print("pay",80,100,8)
-	print("shootin' up my ride!",40,110,11)
-	spr(42,65,70,2,2)
+	]]--
+
+	print("these borg bastards",40,50,11)
+	print("are gonna     for",40,60,11)
+	print("pay",80,60,8)
+	print("shootin' up my ride!",40,70,11)
+	print("press x to begin killing borg",5,100,blink())
 end
 
 function draw_win()
@@ -1105,8 +1081,8 @@ t+=1
 	atkfreq=60
 	placeens({
 		{0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0},
+		{0,0,1,1,1,1,1,1,0,0},
+		{0,1,1,1,1,1,1,1,1,0},
 		{1,1,1,1,1,1,1,1,1,1}
 	})
 	end
@@ -1114,19 +1090,19 @@ t+=1
 	if wave==2 and wavetime<=0 then
 	atkfreq=60
 	placeens({
-		{1,1,1,1,1,1,1,1,1,2},
+		{2,2,2,2,2,2,2,2,2,2},
 		{1,1,1,1,1,1,1,1,1,1},
-		{1,1,1,1,1,1,1,1,1,1},
-		{1,2,2,2,2,2,2,2,2,2}
+		{2,2,2,2,2,2,2,2,2,2},
+		{1,1,1,1,1,1,1,1,1,1}
 	})
 	end	
 	if wave==3 and wavetime<=0 then
 	atkfreq=60
 	placeens({
-		{3,3,2,2,2,2,2,2,3,3},
-		{2,1,1,1,1,1,1,1,1,2},
-		{2,1,1,1,1,1,1,1,1,2},
-		{3,3,3,3,3,3,3,3,3,3}
+		{3,1,1,1,3,3,1,1,1,3},
+		{2,1,2,2,1,1,1,2,1,2},
+		{2,1,2,2,1,1,1,2,1,2},
+		{1,1,1,1,1,1,1,1,1,1}
 	})
 	end
 	if wave==4 and wavetime<=0 then
@@ -1152,9 +1128,9 @@ t+=1
 	atkfreq=60
 	placeens({
 		{5,0,0,0,5,0,0,0,0,5},
-		{0,0,5,0,0,0,0,0,0,0},
 		{0,0,0,0,0,0,0,0,0,0},
-		{3,3,3,3,3,3,3,3,3,3}
+		{0,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,0,0,0,0}
 	})
 	end
 	
@@ -1202,6 +1178,7 @@ function nextwave()
 	else
 		if wave==1 then
 			music(-1,1000)
+			music(9)
 		else
 			music(8)
 		end
@@ -1216,16 +1193,12 @@ function spawnen(entype,enx,eny,enwait)
 		myen.x=enx*1.5-32
 		myen.y=eny-35
 		myen.mission="flyin"
-		
 		myen.posx=enx
 		myen.posy=eny
-		
 		myen.anispd=0.4
 		
 		myen.wait=enwait
-		
 		myen.type=entype
-		
 
 	if entype==nil or entype==1 then
 		--borg probe
@@ -1313,7 +1286,7 @@ function doenemy(myen)
 			myen.sy=0.95
 			myen.sx=sin(t/75)+0.5
 			if t%25==0 then
-				firespread(myen,1,0.75,time()/8)
+				fireshotmod(myen,3,1.25,time()/16)
 			end
 		
 			-- just tweaks
@@ -1326,26 +1299,21 @@ function doenemy(myen)
 			end
 			--sphere
 		elseif myen.type==2 then
-			myen.sy=2
-			local t3=0
-			t3=t+10
-			if myen.y==ship.y or myen.y==ship.y-1 or myen.y==ship.y+1 then
-				if myen.x>=ship.x then
-					if t3>t then
-						myen.sy=0
-						myen.sx=-3
-					elseif t3>t then
-						myen.sy=1
-					end	
-				elseif myen.x<=ship.x then
-					if t3>t then
-						myen.sy=0
-						myen.sx=3	
-					elseif t3>t then
-						myen.sy=1
-					end				
-				end	
-			end		
+			local	tar1x=ship.x+4
+			local	tar1y=ship.y+4
+			local	tar2x=myen.x
+	  local	tar2y=myen.y
+			if ship.y-myen.y<10 then 
+				myen.sx=0
+				myen.sy=2 
+			else
+				angle=atan2(tar1y-tar2y,tar1x-tar2x)
+				myen.sx=sin(angle)-0.99
+				myen.sy=cos(angle)-0.75
+			end
+			if t%30==0 then
+					firespread(myen,5,1,time()/32)
+			end
 			--med borg cube
 		elseif myen.type==3 then
 			myen.sy=2.5
@@ -1362,20 +1330,45 @@ function doenemy(myen)
 			--pyramid
 		elseif myen.type==4 then
 			--assimilated fed
-		elseif myen.type==5 then		
+		elseif myen.type==5 then
+			myen.sy=0.25
+			if t%25==0 then
+				firespread(myen,10,3,time()/8)
+			end		
 			--large cube
 		elseif myen.type==6 then
+			if t%15==0 then
+				aimedfire(myen,2)
+				
+					
+				--fireshotmod(myen,5,0.75,time()/32)
+			end
+			if myen.y>90 then
+				myen.sy=-0.5	
+			elseif myen.y<50 then
+				myen.sy=0.25
+			end	
+		
 			--invader
 		elseif myen.type==7 then
-			myen.sy=0.25
-			if myen.y>110 then
-				myen.sy=1
-			else
-			
-				if t%30==0 then	
-					firespread(myen,30,1.25,time()/16)
-				end			
+			if myen.y>90 then
+				myen.sy=-0.5	
+			elseif myen.y<50 then
+				myen.sy=0.25
 			end	
+			
+			--if t%15==0 then	
+			--	fireshotmod(myen,2,0.75,time()/32)
+			--end
+			
+			if t%30==0 then	
+				fireshotgun(myen,15,1.5,time()/8)
+			end
+							
+			if t%45==0 then	
+				firespread(myen,25,1.25,time()/8)
+			end
+				
 		end	
 		move(myen)
 
@@ -1421,7 +1414,7 @@ function pickfire()
 	local myen=enemies[myindex]
 	if myen==nil then return
 	elseif myen.mission=="protec" then
-		firespread(myen,1,0.75,time()/8)
+		--firespread(myen,1,0.75,time()/8)
 	end
 end
 
@@ -1444,6 +1437,9 @@ function killen(myen)
 	sfx(2)
 	kills+=1
 	parttor+=1.125
+	if myen.type==7 then
+		shake+=30
+	end
 	if myen.mission=="assim" then
 		if rnd()<0.75 then
 			pickattack()
@@ -1456,18 +1452,12 @@ end
 function fire(myen,ang,spd)
 	
 	local myebul=makespr()
-	local angle=0
+	
 	myebul.x=myen.x
 	myebul.y=myen.y+2
 	myebul.spr=36
 	myebul.ani={36,37,38,39,36}
 	myebul.anispd=0.75
-	
-	if myen.type==7 then
-		myebul.x=myen.x+15
-		myebul.y=myen.y+15
-	end
-	
 	
 	myebul.sx=sin(ang)*spd
 	myebul.sy=cos(ang)*spd
@@ -1477,29 +1467,18 @@ function fire(myen,ang,spd)
 	myen.flash1=4
 	myebul.bulmode=true
 	
-	if myen.type==1 then
-		tar1x=ship.x+4
-		tar1y=ship.y+4
-		tar2x=myen.x
-		tar2y=myen.y
-	 angle=atan2(tar1y-tar2y,tar1x-tar2x)
-		myebul.sx=sin(angle)
-		myebul.sy=cos(angle)
+	if myen.type==7 then
+		myebul.x=myen.x+15
+		myebul.y=myen.y+15
+	end
+	if myen.type==6 then
+		myebul.x=myen.x+15
+		myebul.y=myen.y+15
 	end
 	
-	--[[if myen.type==2 then
-		tar1x=ship.x+4
-		tar1y=ship.y+4
-		tar2x=myen.x
-		tar2y=myen.y
-		angle=atan2(tar1y-tar2y,tar1x-tar2x)
-		myebul.sx=sin(angle)
-		myebul.sy=cos(angle)
-	end]]--
 	add(ebuls,myebul)
-	
 	sfx(37)
-
+	return myebul
 	
 end
 
@@ -1509,10 +1488,72 @@ function firespread(myen,num,spd,base)
 		fire(myen,1/num*i+base,spd)
 	end	
 	
+end
+
+function fireshotgun(myen,num,spd,base)
+ 
+	for i=1,num do
+		fire(myen,rnd(.10)%base-0.03,spd)
+	end	
 	
 end
 
+function fireshotmod(myen,num,spd,base)
+ 
+	for i=1,num do
+		fire(myen,rnd()%1,spd)
+	end	
+	
+end
 
+function tor_fire(newbul,ang,spd)
+	local newbul=makespr()
+	newbul.x=ship.x-1
+	newbul.y=ship.y-3
+	newbul.spr=36
+	newbul.colw=7
+	newbul.sx=0
+	newbul.sy=6
+	newbul.sx=sin(ang)*spd
+	newbul.sy=cos(ang)*spd
+	add(buls2,newbul)
+end
+
+function tor_spread(ship,num,spd,base)
+	local b=0.10
+	bul2cnt=bul2cnt-num
+	for i=1,num do
+		tor_fire(ship,0.30+b*i,spd)
+	end	
+end
+
+function aimedfire(myen,spd)
+	local myebul=fire(myen,0,spd)
+	local ang=atan2(ship.y-(myebul.y),ship.x-(myebul.x))
+	myebul.sx=sin(ang)*spd
+	myebul.sy=cos(ang)*spd
+	--fire(myen,ang,spd)
+end
+
+function applydam(myen,mybul,kind)
+	sfx(3)
+	sparks(myen.x,myen.y)
+	myen.y=myen.y-1
+	myen.flash=2
+	if kind=="pulse" then
+		myen.hp-=pulse_p
+	elseif kind=="qtor" then
+		myen.hp-=q_tor
+	elseif kind=="ram" then
+		myen.hp-=3
+		shields-=1
+		invul=45
+		shake=8
+		sparks(myen.x,myen.y)
+	end	
+	return myen
+	
+end
 __gfx__
 67600000070000000700000007600000007000006770000007000000677000006760000067600000776167617761676117161776171117111676111100000000
 70700000770000006070000070700000077000007000000070700000707000007070000070700000717171717171717117171171171117111717111100000000
@@ -1812,7 +1853,7 @@ c11100000f5530f5000f5530a5000f55212500125000f5530f5000f5531f5000f5520d5520d5000d
 002400000206007060020600706002060070600206007060020600706002060070600206007060020600000000000000000000000000000000000007060000000000000000000000000000000000000706002060
 00241a00000000000000000000000000000000000000000000000000001f0601f0601f0601f06026060260602606026060290602b0602b0602b0602b0602b0602b0602b060014000140001400014000140001400
 00240e000706002060070600206007060020600706002060070600206007060020600706002060014000140001400014000140001400014000140001400014000140001400014000140001400014000140001400
-64020000261500c05007650076500d050166501005010550125501355000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+64020000261200c02007620076200d020166201002010520125201352000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 9116000013230132301323013230182301c2321a2301a2301a2301a2301d230212321f2301f2301f2301f2301f2301f2301f230162321d2321f232212321d2301f2301f2301f2321d2301d2301d2321c2301c230
 011600000005500055000550705507055070550005500056000550705507055070550005500055000550705507055070550005500055000550705507055070550005500055000550705507055070550005500055
 91160000182001c230182301c2321a2301a2301a2301a2301a2301a2301a2301a2301a2301a2221a2221a21400200002000020000200002000020000200002000020000200002000020000200002000020000200
