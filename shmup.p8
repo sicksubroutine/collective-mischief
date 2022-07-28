@@ -7,7 +7,6 @@ __lua__
 --todo
 -------------
 -- nicer screens
--- enemy bull spreadshot
 -- enemy spawn location
 -- pickups
 
@@ -574,7 +573,7 @@ function update_game()
 			if col(myen,mybul) and ded<=0 then
 				smol_shwave(mybul.x,mybul.y)
 				applydam(myen,mybul,"qtor")
-				del(buls,mybul)
+				del(buls2,mybul)
 				if myen.hp<=0 then
 					killen(myen)
 				end
