@@ -8,7 +8,6 @@ __lua__
 
 --todo
 -------------
--- bombs/torpedoes 
 -- nicer screens
 -- boss
 -- enemy spawn location
@@ -94,7 +93,7 @@ function startgame()
 	muzzle2=0
 	torspr=0
 	invul=0
-	cher=3
+	cher=0
 	torout=0
 	delay=120
 	ded=0
@@ -916,8 +915,6 @@ function draw_game()
 		pal()
 		drwmyspr(mypick)
 	end
-	
-	
 	--drawing enemies
 	for myen in all(enemies) do
 		if myen.flash>0 then
@@ -990,7 +987,7 @@ function draw_game()
 		if myp.age>myp.maxage then
 			myp.size-=0.5
 			if myp.size<0 then
-				del(parts,myp)
+				del(parts2,myp)
 			end
 		end
 	end
@@ -1611,9 +1608,7 @@ function killen(myen)
 	if shields==1 then
 		res_chance=0.33
 	end	
-	if myen.type==7 then
-		shake+=30
-	end
+	
 	if myen.mission=="assim" then
 		if rnd()<0.75 then
 			pickattack()
