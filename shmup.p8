@@ -5,12 +5,11 @@ __lua__
 --by chaz(🐱)
 --tng music by phlox
 --shmup tutorial by lazy devs
+--playtesting by cat
 
 --todo
 -------------
 -- nicer screens
--- enemy spawn location
-
 
 function _init()
 	cls(0)
@@ -20,6 +19,16 @@ function _init()
 	t=0
 	lockout=0
 	shake=0
+	cartdata("star_trek_shmup")
+	stars={}
+	for i=1,100 do
+		local newstar={}
+		newstar.x=flr(rnd(128))
+		newstar.y=flr(rnd(128))
+		newstar.spd=rnd(3.75)+(0.15)
+		add(stars,newstar)	
+	end
+	
 end
 
 function _update()
@@ -66,7 +75,7 @@ end
 function startgame()
 	mode="wavetxt"
 	
-	wave=0
+	wave=8
 	t=0
 	lastwave=9
 	btimer=1000
@@ -82,12 +91,13 @@ function startgame()
 	ship.colh=6
 	ship.colw=5
 	ship.spr=18
-	
+	ship.ded=false
 	--starting game conditions
 	shields=5
 	bul2cnt=10
-	pulse_p=1.25
-	q_tor=0
+	pulse_p=1.45
+	q_tor=10
+	firefreq=20
 	--
 	kills=0
 	parttor=0
@@ -95,25 +105,15 @@ function startgame()
 	muzzle2=0
 	torspr=0
 	invul=0
-	cher=0
+	cher=5
 	torout=0
 	delay=120
-	ded=0
 	faceanim=224
 	wavetime=80
 	moartor=0
 	atkfreq=40
 	nextfire=0
 	hit=0
-	
-	stars={}
-	for i=1,100 do
-		local newstar={}
-		newstar.x=flr(rnd(128))
-		newstar.y=flr(rnd(128))
-		newstar.spd=rnd(3.75)+(0.15)
-		add(stars,newstar)	
-	end
 	
 	buls={}
 	buls2={}	
@@ -139,27 +139,7 @@ function startscreen()
 
 	mode="start"
 	music(5)
-	--stars
-	stars={}
-	for i=1,100 do
-		local newstar={}
-		newstar.x=flr(rnd(129))
-		newstar.y=flr(rnd(129))
-		newstar.spd=rnd(3.75)+(0.15)
-		add(stars,newstar)	
-	end
-end
-
-function ftw()
---stars
-	stars={}
-	for i=1,100 do
-		local newstar={}
-		newstar.x=flr(rnd(128))
-		newstar.y=flr(rnd(128))
-		newstar.spd=rnd(3.75)+(0.15)
-		add(stars,newstar)	
-	end
+	
 end
 -->8
 --tools
@@ -530,26 +510,26 @@ function update_game()
 	muzzle2=0
 	--left
 	local shipsd=1.30
-	if btn(0) and ded<=0 then
+	if btn(0) and ship.ded!=true then
 		ship.sx=-shipsd+rnd(0.25)-0.05
 		ship.spr=17
 	end
 	--right
-	if btn(1) and  ded<=0 then
+	if btn(1) and ship.ded!=true then
 		ship.sx=shipsd+rnd(0.25)-0.05
 		ship.spr=19
 	end
 	--up
-	if btn(2) and ded<=0 then
+	if btn(2) and ship.ded!=true then
 		ship.sy=-shipsd+rnd(0.25)-0.05
 	end
 	--down
-	if btn(3) and ded<=0 then
+	if btn(3) and ship.ded!=true then
 		ship.sy=shipsd+rnd(0.25)-0.05
 	end	
 	--controls phasers o
 	if btimer<=0 then	
-		if btn(5) and ded<=0 then
+		if btn(5) and ship.ded!=true then
 			local newbul=makespr()
 			newbul.x=ship.x
 			newbul.y=ship.y-1
@@ -566,10 +546,10 @@ function update_game()
 	--controls torpedoes x
 	torout-=1
 	if btimer2<=0 then
-		if btn(4) and ded==0 and torout<0 then
+		if btn(4) and ship.ded!=true and torout<0 then
 			if cher>=1 and bul2cnt>=1 then
 				sfx(44)
-				cherbomb(cher)
+				cherbomb()
 				cher=0
 				btimer2=35
 				shake=10
@@ -646,10 +626,7 @@ function update_game()
 		if myebul.age>200 then
 			del(ebuls,myebul)
 		end
-		if delbul==1 and myebul.age==nil then return
-		elseif delbul==1 and myebul.age>=200 then	
-			delbul=0 del(ebuls,myebul)
-		end	
+			
 	end
 	-- moving pickups
 	for mypick in all (pickups) do
@@ -682,9 +659,9 @@ function update_game()
 	-- collision borg x torpedoes
 	for myen in all(enemies) do
 		for mybul in all(buls2) do
-			if col(myen,mybul) and ded<=0 then
+			if col(myen,mybul) and ship.ded!=true then
 				if mybul.type=="qtor" then
-					smol_shwave(mybul.x,mybul.y)
+					smol_shwave(mybul.x,mybul.y,12)
 					applydam(myen,mybul,mybul.type)
 					del(buls2,mybul)
 				elseif mybul.type=="bomb" then
@@ -698,11 +675,23 @@ function update_game()
 			end	
 		end		
 	end
+
+	-- collision ebuls x bomb
+	for myebuls in all(ebuls) do
+		for mybul in all(buls2) do
+			if mybul.type=="bomb" then
+				if col(myebuls,mybul) and ship.ded!=true then
+						smol_shwave(myebuls.x,myebuls.y)	
+						del(ebuls,myebuls)
+				end	
+			end
+		end		
+	end
 	
 	-- collision borg x pulse_phasers
 	for myen in all(enemies) do
 		for mybul in all(buls) do
-			if col(myen,mybul) and ded<=0 then
+			if col(myen,mybul) and ship.ded!=true then
 				smol_shwave(mybul.x,mybul.y)
 				del(buls,mybul)
 				applydam(myen,mybul,"pulse")
@@ -716,7 +705,7 @@ function update_game()
 	-- collision ship x enemies
 	if invul<=0 then
 		for myen in all(enemies) do
-			if col(myen,ship) and ded<=0 then
+			if col(myen,ship) and ship.ded!=true then
 				if myen.boss and myen.mission=="flyin" then
 					shake=5
 					hit=2
@@ -745,7 +734,7 @@ function update_game()
 	-- coll x ebuls
 	if invul<=0 then
 		for myebul in all(ebuls) do
-			if col(myebul,ship) and ded<=0 then
+			if col(myebul,ship) and ship.ded!=true then
 				sfx(2)
 				shields-=1
 				invul=45
@@ -760,7 +749,7 @@ function update_game()
 	if invul<=0 then
 		for myebul in all(muh_lazer) do
 			myebul.age+=1
-			if col(myebul,ship) and ded<=0 then
+			if col(myebul,ship) and ship.ded!=true then
 				sfx(2)
 				shields-=4
 				invul=45
@@ -776,14 +765,14 @@ function update_game()
 	end
 	-- collision pickups x ships
 	for mypick in all(pickups) do
-		if col(mypick,ship) and ded<=0 then
+		if col(mypick,ship) and ship.ded!=true then
 			del(pickups,mypick)
 			plogic(mypick)
 		end	
 	end
 	
 	for mypick in all(pickups2) do
-		if col(mypick,ship) and ded<=0 then
+		if col(mypick,ship) and ship.ded!=true then
 			del(pickups2,mypick)
 			plogic2(mypick)
 		end	
@@ -805,13 +794,12 @@ function update_game()
 	end	
 	
 	--u ded
-	if shields<=0 then
-		
+	if shields<=0 then	
 		invul=10000
-		delay-=0.5
-		ded=1
+		delay-=1
+		ship.ded=true
 	end
-	if shields<=0 and ded==1 and delay>119 then
+	if shields<=0 and ship.ded and delay>118.5 then
 		explodes(ship.x,ship.y)
 		music(8)
 	end
@@ -834,7 +822,7 @@ function update_game()
 	end
 	animstars()
 
-	if mode=="game" and #enemies==0 and ded<=0 and wave!=9 then
+	if mode=="game" and #enemies==0 and ship.ded!=true and wave!=9 then
 		nextwave()
 	end
 end
@@ -933,9 +921,9 @@ function draw_game()
 	if invul<=0 then
 		drwmyspr(ship)	
 		else
-		if invul<=0 and ded==1 then
+		if invul<=0 and ship.ded then
 			
-		elseif invul>0 and ded<=0 then
+		elseif invul>0 and ship.ded!=true then
 			if sin(t/5)<0 then
 				spr(34,ship.x,ship.y)
 			end
@@ -1094,18 +1082,18 @@ function draw_game()
 	
 	--ending taunt message
 		local kx=63
-	if delay<110 and kills==0 then
+	if delay<119 and kills==0 then
 		print("you got",25,kx,11)
 		print("zero kills",55,kx,8)
-	elseif delay<110 and kills==1 then
+	elseif delay<119 and kills==1 then
 		print("you only got",25,kx,11)
 		print("one",75,kx,8)
 		print("kill!",88,kx,11)
-	elseif delay<110 and kills>2 and kills<99 then
+	elseif delay<119 and kills>2 and kills<99 then
 		print("you only got",25,kx,11)
 		print(kills,75,kx,8)
 		print("kills!",84,kx,11)
-	elseif delay<110 and kills>99 then
+	elseif delay<119 and kills>99 then
 		print("you only got",25,kx,11)
 		print(kills,75,kx,8)
 		print("kills!",89,kx,11)
@@ -1134,7 +1122,7 @@ function draw_game()
 	
 	--torpedo related alerts
 	if torout>14 then
-		popfloat("out of torpedoes!",ship.x,ship.y)
+		popfloat("torpedoes depleted!",ship.x,ship.y)
 	end
 
 	if moartor>10 then
@@ -1153,7 +1141,7 @@ function draw_game()
 		end
 	end
 
-	if invul>0 and ded==0 and hit==1 then
+	if invul>0 and ship.ded!=true and hit==1 then
 		popfloat("shields hit!",ship.x,ship.y)
 	end
 	
@@ -1187,8 +1175,8 @@ function draw_start()
 	cls(0)
 	starfield()
 	
-	spr(231,64,75,2,2)
-	spr(18,57,82)
+	spr(231,60,75,2,2)
+	spr(18,53,82)
 	
 	cprint("star trek:",64,25,8)
 	cprint("collective mischief",64,33,11)
@@ -1197,53 +1185,39 @@ function draw_start()
 	
 end		
 function draw_over()
- 	cls(0)
-	--REDO THIS:
-	--[[
- 	--planet
-	spr(45,68,52,2,2)
-	--borg ship
-	spr(64,85,35,4,4)
-	-- tractor beam?
-	spr(24,70,40,2,2)
-	-- destroyed ships
-	spr(55,65,40)
-	spr(56,69,45)
-	spr(57,75,45)
-
-	print("your crew is dead!", 30,20,8)
-	print("your ship was destroyed!", 30,28,8)
+	cls(0)
+	star_cut1()
 	
-	print("the borg",35,55,11)
-	print("assimilated earth!",35,69,11)
+
+	cprint("your crew is dead!", 64,20,8)
+	cprint("your ship was destroyed!", 64,28,8)
+	
+	cprint("the borg",64,45,11)
+	cprint("assimilated earth!",64,53,11)
 	--lololol! n00b!
-	print("you have lost everything.",20,90,8)
-	print("the game is over!",34,100,8)
-	]]--
+	cprint("you have lost everything.",64,70,8)
+	cprint("the game is over!",64,78,8)
+	
+	cprint("press x to try again!",64,90,blink())
+	
 end
 function draw_cut1()
 	
 	cls(0)
 	star_cut1()
 	
-	spr(64,0,0,4,4)
-	spr(64,80,20,4,4)
-	spr(50,30,60)
+	spr(64,20,17,2,2)
+	spr(64,80,20,2,2)
+	spr(50,23,77)
 	spr(50,60,30)
 	spr(50,90,80)
 	spr(70,75,8)
 	spr(70,65,15)
 	spr(70,45,9)
-	
-	--[[
-	print("borg cubes",40,55,11)
-	print("are approaching",40,63,8)
-	print("earth!",40,70,12)
-	]]--
 
-	cprint("these borg bastards",64,50,11)
+	cprint("these borg drones",64,50,11)
 	cprint("are gonna     for",64,60,11)
-	cprint("pay",77,60,8)
+	cprint("pay",76,60,8)
 	cprint("shootin' up my ride!",64,70,11)
 	cprint("press x to begin killing borg",64,100,blink())
 end
@@ -1252,8 +1226,8 @@ function draw_win()
 cls(0)
 draw_game()
 
-print("you saved earth!",30,20,8)
-print("good job!", 40,30,8)
+cprint("you saved earth!",64,20,8)
+cprint("good job!",64,30,8)
 
 end
 
@@ -1261,13 +1235,17 @@ function draw_wavetxt()
 	draw_game()
 	-- wave ui
 	pal(12,8)
-	spr(104,43,49)
-	spr(120,51,49)
-	spr(120,59,49)
-	spr(120,67,49)
-	spr(111,71,49)
+	spr(104,40,49)
+	for i=1,6 do
+		spr(120,41+i*7,49)
+	end
+	spr(111,87,49)
 	pal()
-	print("wave "..wave,50,50,blink())
+	if wave==lastwave then
+		cprint("Oh no!",69,50,blink())
+	else 
+		cprint("wave "..wave.. " of "..lastwave,69,50,blink())
+	end
 end
 -->8
 --waves and enemies
@@ -1284,6 +1262,7 @@ t+=1
 	if wave==1 then
 	--opening wave
 	atkfreq=50
+	firefreq=20
 	placeens({
 		{0,0,0,1,1,1,0,0,0,0},
 		{0,0,1,1,1,1,1,1,0,0},
@@ -1295,6 +1274,7 @@ t+=1
 	if wave==2 and wavetime<=0 then
 	-- sphere introduction
 	atkfreq=47
+	firefreq=20
 	placeens({
 		{0,0,2,2,2,2,2,2,0,0},
 		{0,1,1,1,1,1,1,1,1,0},
@@ -1305,6 +1285,7 @@ t+=1
 	if wave==3 and wavetime<=0 then
 	-- medium cube introduction
 	atkfreq=45
+	firefreq=20
 	placeens({
 		{3,1,2,3,3,3,3,2,1,3},
 		{2,1,2,3,3,3,1,2,1,2},
@@ -1315,6 +1296,7 @@ t+=1
 	if wave==4 and wavetime<=0 then
 	-- pyramid intro
 	atkfreq=42
+	firefreq=20
 	placeens({
 		{3,3,4,3,3,3,3,4,3,3},
 		{1,1,4,1,1,1,1,4,1,1},
@@ -1323,8 +1305,9 @@ t+=1
 	})		
 	end
 	if wave==5 and wavetime<=0 then
-	-- assim fed ship
-	atkfreq=40
+	-- assim fed ship intro
+	atkfreq=100
+	firefreq=20
 	placeens({
 		{4,4,4,4,5,0,4,4,4,4},
 		{0,4,4,4,0,0,0,4,4,4},
@@ -1332,29 +1315,32 @@ t+=1
 		{0,0,0,4,0,0,3,3,3,4}
 	})
 	end
-	-- assim fed ships are pissed
+	-- assim fed ships are angry
 	if wave==6 and wavetime<=0 then
-	atkfreq=30
+	atkfreq=45
+	firefreq=20
 	placeens({
-		{5,0,0,0,5,0,0,0,0,5},
-		{0,0,3,0,0,0,0,3,0,0},
-		{0,0,3,0,0,0,0,3,0,0},
-		{0,5,0,0,0,0,0,5,0,0}
+		{0,0,5,0,5,0,5,0,0,0},
+		{2,1,0,0,0,0,0,0,1,2},
+		{2,1,3,1,1,1,1,3,1,2},
+		{1,1,2,1,1,1,1,2,1,1}
 	})
 	end
 	-- cube hell
 	if wave==7 and wavetime<=0 then
-	atkfreq=25
+	atkfreq=100
+	firefreq=20
 	placeens({
-		{6,0,0,0,3,3,3,3,3,3},
-		{0,0,0,0,3,3,3,3,3,3},
-		{0,0,0,0,3,3,3,3,3,3},
-		{0,0,0,0,3,3,3,3,3,3}
+		{0,0,0,0,0,0,0,0,0,0},
+		{6,0,3,3,3,3,3,3,3,0},
+		{0,0,3,3,3,3,3,3,3,0},
+		{3,3,3,3,3,3,3,3,3,0}
 	})
 	end
 	-- cube's revenge
 	if wave==8 and wavetime<=0 then
-	atkfreq=10
+	atkfreq=300
+	firefreq=40
 	placeens({
 		{6,0,0,0,6,0,0,0,6,0},
 		{0,0,0,0,0,0,0,0,0,0},
@@ -1362,9 +1348,10 @@ t+=1
 		{0,0,0,0,0,0,0,0,0,0}
 	})
 	end
-	--final boss
+	--final baws
 	if wave==9 and wavetime<=0 then
-	atkfreq=15
+	atkfreq=25
+	firefreq=20
 	placeens({
 		{0,0,0,0,7,0,0,0,0,0},
 		{0,0,0,0,0,0,0,0,0,0},
@@ -1388,8 +1375,8 @@ end
 
 function nextwave()
 	wave+=1
-	delbul=1
-	if wave>lastwave and ded<=0 then
+	ebuls={}
+	if wave>lastwave and ship.ded!=true then
 		mode="win"
 		lockout=t+50
 		music(2)
@@ -1421,14 +1408,14 @@ function spawnen(entype,enx,eny,enwait)
 	if entype==nil or entype==1 then
 		--borg probe
 		myen.spr=68
-		myen.hp=1
+		myen.hp=2
 		myen.ani={68,69,70,71}
 		myen.colw=5
 		myen.colh=6
 	elseif entype==2 then
 		-- sphere
 		myen.spr=84
-		myen.hp=4
+		myen.hp=6
 		myen.ani={84,85,86,87}
 		myen.colw=8
 		myen.colh=8
@@ -1437,24 +1424,28 @@ function spawnen(entype,enx,eny,enwait)
 		myen.spr=50
 		myen.hp=10
 		myen.ani={50,51,52,53}
+		myen.colw=8
+		myen.colh=8
 	elseif entype==4 then
 		-- pyramid
 		myen.spr=100
 		myen.hp=7	
 		myen.ani={100,101,102,103}
+		myen.colw=7
+		myen.colh=5
 	elseif entype==5 then
 		-- mini boss-assimilated fed
 		myen.spr=70
-		myen.hp=20
+		myen.hp=25
 		myen.ani={72,74,76}
 		myen.sprw=2
 		myen.sprh=2
-		myen.colw=16
-		myen.colh=16
+		myen.colw=8
+		myen.colh=15
 	elseif entype==6 then
-		-- large cube
+		-- large cube -- second mini boss
 		myen.spr=64
-		myen.hp=50
+		myen.hp=48
 		myen.ani={64,66,96}
 		myen.sprw=2
 		myen.sprh=2
@@ -1466,9 +1457,8 @@ function spawnen(entype,enx,eny,enwait)
 		myen.y=-24
 		myen.posx=48
 		myen.posy=25
-
 		myen.spr=128
-		myen.hp=130
+		myen.hp=150
 		myen.ani={128,132}
 		myen.sprw=4
 		myen.sprh=4
@@ -1487,10 +1477,11 @@ function doenemy(myen)
 		myen.wait-=1
 		return
 	end	
-	debug=myen.hp
+	--debug=myen.hp
 	if myen.mission=="flyin" then
 		--flying in
 		--easing function
+		myen.ghost=true
 		local dx=(myen.posx-myen.x)/12
 		local dy=(myen.posy-myen.y)/12
 		if myen.boss then
@@ -1509,13 +1500,15 @@ function doenemy(myen)
 				myen.wait=25
 				myen.mission="boss1"
 				myen.phbegin=t
+				myen.ghost=false
 			else
 				myen.mission="protec"
+				myen.ghost=false
 			end
 		end
 	--wait for collective	
 	elseif myen.mission=="protec" then
-	--boss first phase	
+		--boss first phase	
 	elseif myen.mission=="boss1" then
 		boss1(myen)
 	elseif myen.mission=="boss2" then
@@ -1528,8 +1521,6 @@ function doenemy(myen)
 		boss5(myen)
 	--you will be assimilated.
 	elseif myen.mission=="assim" then
-		
-		
 		--borg probe
 		if myen.type==1 then
 			myen.sy=0.95
@@ -1537,7 +1528,6 @@ function doenemy(myen)
 			if t%25==0 then
 				fireshotmod(myen,3,1.25,time()/16)
 			end
-		
 			-- tweaking location
 			if myen.x<32 then
 				myen.sx+=1-(myen.x/32)
@@ -1594,17 +1584,20 @@ function doenemy(myen)
 			--assimilated fed
 		elseif myen.type==5 then
 			myen.sy=0.25
-			if t%25==0 then
-				firespread(myen,10,3,time()/8)
-			end		
+			if t%55==0 and myen.hp>=24 then
+				firespread(myen,12,1.5,time()/8)
+			elseif t%35==0 and myen.hp<24 then
+				aimedfire(myen,2)	
+			end	
+					
 			--large cube
 		elseif myen.type==6 then
-			if t%15==0 then
+			if t%19==0 then
 				aimedfire(myen,2)
 			end
-			if myen.y>90 then
+			if myen.y>91 then
 				myen.sy=-0.5	
-			elseif myen.y<50 then
+			elseif myen.y<25 then
 				myen.sy=0.25
 			end	
 			--invader
@@ -1624,7 +1617,7 @@ function picktimer()
 	
 	if t>nextfire then
 		pickfire()
-		nextfire=t+20+rnd(15)
+		nextfire=t+firefreq+rnd(firefreq)
 	end	
 	
 	if t%atkfreq==0 then
@@ -1699,8 +1692,8 @@ function killen(myen)
 	sfx(2)
 	kills+=1
 	parttor+=0.26
-	local cherchance=0.1
-	local res_chance=0.02
+	local cherchance=0.09
+	local res_chance=0.009
 	if shields==1 then
 		res_chance=0.33
 	end	
@@ -1872,7 +1865,7 @@ function applydam(myen,mybul,kind)
 			myen.hp-=mybul.dmg
 			shake=6
 		elseif kind=="ram" then
-			myen.hp-=3
+			myen.hp-=10
 			shields-=1
 			invul=45
 			shake=8
@@ -1904,7 +1897,7 @@ function fire_muh_lazer(myen)
 	add(muh_lazer,newbul)
 end
 
-function cherbomb(cher)
+function cherbomb()
 	local spc=0.25/(cher*2)
 	
 	for i=0,cher*2 do
@@ -2067,19 +2060,20 @@ end
 function boss5(boss)
 	boss.shake=10
 	boss.flash=10
+	music(-1)
 	if t%8==0 then
 		explodes(boss.x-5+rnd(32),boss.y-5+rnd(32))
 		sfx(2)
 		shake=2
 	end
-	if boss.phbegin+2*30<t then
-		if t%5==0 then
+	if boss.phbegin+3*30<t then
+		if t%4==2 then
 			explodes(boss.x-5+rnd(32),boss.y-5+rnd(32))
 			sfx(2)
 			shake=2
 		end
 	end
-	if boss.phbegin+4*30<t then
+	if boss.phbegin+6*30<t then
 		shake=18
 		bigexplode(boss.x+15,boss.y+15)
 		sfx(46)
@@ -2124,21 +2118,21 @@ __gfx__
 0767767000900000565555665b5555665655556b565555660001c10007c79997099700009aa9a79000ccc444443333000000000000ccc55ccc5ccc0000000000
 0c0000c0009000005655655b5655655b565565565655b55600001000060660600006000097999090000444443333300000000000000ccccc555cc00000000000
 0000000000900000b66566656665b665b6656b6566b56b65000000000c0000c0000000000990000000000443333000000000000000000b5cccc0000000000000
-6556655665566500655665566556650035555b00b555530035555b00b55553000000000000000000000000000000000000000000000000000000000000000000
-656655b5b56b55006566553535635500653376006533760065337600653376000000000000000000000000000000000000000000000000000000000000000000
-555555555555550055555555555555005b55550053b55500553b55005553b50000c0000000000c0000c0000000000c0000c0000000000c000000000000000000
-5b56665556566b0053566655565663000566500005665000056650000566500000c0000000000c0000c0000000000c0000c0000000000c000000000000000000
-65555665b55556006555566535555600005500000055000000550000005500000050000000000500005000000000050000500000000005000000000000000000
-655655b5655655006556553565565500000000000000000000000000000000000050000000000500005000000000050000500000000005000000000000000000
-66566656665b6600665666566653660000000000000000000000000000000000007b66555566b7000077b655556b7700007766b55b6677000000000000000000
-55555555555555005555555555555500000000000000000000000000000000000070558888550700007055888855070000705588885507000000000000000000
-5555553666665500555555b6666655000056650000566500005bb50000566500005057b55b75050000505b5b55b5050000505755b57505000000000000000000
-3535655555655500b5b5655555653b00055655b00556556005565560055b556000b05b6666b50b0000b0566666650b0000b05b6666b50b000000000000000000
-b5b565666555b3003535656665553b00565b55b55b565565565655655b5b5565000057611675000000005b6116b5000000005761167500000000000000000000
-555555566655b3005555555666553b00b655b55b6b55655bb655b55b6b55655600005b6576b50000000056657665000000005b6576b500000000000000000000
-555653655555b30055565b6555556b00b675b5656675b5b5b675b5b56b7565b5000057666675000000005b6666b5000000005766667500000000000000000000
-565655666555630056565566655566005b5b656b5b5bb5b65b5b65bb5b566566000005b7b75000000000056b6b500000000005b7b75000000000000000000000
-000000000000000000000000000000000566555005bb555005bb5550056655500000005555000000000000555500000000000055550000000000000000000000
+6556655665566500655665566556650035555b00b555530035555b00b5555300c000000c00000000c000000c00000000c000000c000000000000000000000000
+656655b5b56b55006566553535635500653376006533760065337600653376005000000500000000500000050000000050000005000000000000000000000000
+555555555555550055555555555555005b55550053b55500553b55005553b5006000000600000000600000060000000060000006000000000000000000000000
+5b56665556566b005356665556566300056650000566500005665000056650006000000600000000600000060000000060000006000000000000000000000000
+65555665b555560065555665355556000055000000550000005500000055000070033007000000007003300700000000700bb007000000000000000000000000
+655655b5655655006556553565565500000000000000000000000000000000006b6bb6b60000000063633636000000006b6336b6000000000000000000000000
+66566656665b66006656665666536600000000000000000000000000000000008003300800000000800bb0080000000080033008000000000000000000000000
+55555555555555005555555555555500000000000000000000000000000000000005500000000000000550000000000000055000000000000000000000000000
+5555553666665500555555b6666655000056650000566500005bb500005665000066660000000000006666000000000000666600000000000000000000000000
+3535655555655500b5b5655555653b00055655b00556556005565560055b55600588885000000000058888500000000005888850000000000000000000000000
+b5b565666555b3003535656665553b00565b55b55b565565565655655b5b556563533536000000006b5bb5b600000000635bb536000000000000000000000000
+555555566655b3005555555666556600b655b55b6b55655bb655b55b6b5565566b6776b600000000636776360000000063677636000000000000000000000000
+555653655555560055565b6555555600b675b5656675b5b5b675b5b56b7565b563533536000000006353b536000000006b5b35b6000000000000000000000000
+565655666555650056565566655565005b5b656b5b5bb5b65b5b65bb5b56656605b33b5000000000053bb3500000000005bb3350000000000000000000000000
+000000000000000000000000000000000566555005bb555005bb5550056655500066660000000000006666000000000000666600000000000000000000000000
 00000000000000000000000000000000005566000055bb000055bb00005566000000000000000000000000000000000000000000000000000000000000000000
 65566556655665000b585b00b00000b0b65b55533556555bb65555533556555b001cc11167617171777177717111771167611111088888000000000000000ccc
 656655b5b56b5500b35b53b0385358300b55575003bb5750053b57500553bb5001ccc11171717171171171117111767171711111088888800000000000000ccc
@@ -2148,12 +2142,12 @@ b5b565666555b3003535656665553b00565b55b55b565565565655655b5b55650000576116750000
 655655b565565500000b0000000500000000000000000000000000000000000001ccc11171717171171171117111767171711111088888800000000000000ccc
 66566656665b66000000000000b3b00000000000000000000000000000000000001cc11167617171777177717771771167611111088888000000000000000ccc
 555555555555b30000000000000b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-555555666666b3000000000000000000000000007000000067607070777070001111111107070777077707007771676177611111677167617761777067717711
+55555566666655000000000000000000000000007000000067607070777070001111111107070777077707007771676177611111677167617761777067717711
 353565555565b3000000000000000000000000007000000076707070070070001111111107070070007007001711767171711111711171717171717071117671
-b5b56566655553000000000000000000000000007000000070707070070070001111111107770070007007001711717171711111711171717171717071117171
-55555556665565000000000000000000000000007000000070707070070070001111111107670070007007001711717177111111771171717711717077117171
-55565665555566000000000000000000000000007000000070707070070070001111111107070070007007001711717177611111711177717761717071117171
-56565566655566000000000000000000000000000000000076707070070000001111111107070070007000001711767171711111711171717171717071117671
+b5b565666555b3000000000000000000000000007000000070707070070070001111111107770070007007001711717171711111711171717171717071117171
+55555556665566000000000000000000000000007000000070707070070070001111111107670070007007001711717177111111771171717711717077117171
+55565665555556000000000000000000000000007000000070707070070070001111111107070070007007001711717177611111711177717761717071117171
+56565566655565000000000000000000000000000000000076707070070000001111111107070070007000001711767171711111711171717171717071117671
 00000000000000000000000000000000000000007000000067607770070070001111111107070777007007001711676171711111776171617171617077617711
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000005b655b55000000000000000000000000536553550000000000000000000000005b655b55000000000000b00000b0b00700b00007000070070070
