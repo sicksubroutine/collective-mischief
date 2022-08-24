@@ -75,7 +75,7 @@ end
 function startgame()
 	mode="wavetxt"
 	
-	wave=8
+	wave=0
 	t=0
 	lastwave=9
 	btimer=1000
@@ -105,7 +105,7 @@ function startgame()
 	muzzle2=0
 	torspr=0
 	invul=0
-	cher=5
+	cher=0
 	torout=0
 	delay=120
 	faceanim=224
