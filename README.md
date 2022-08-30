@@ -1,5 +1,21 @@
 # VG-Shmup
-My first ever video game. Tracking my code changes over time.
+
+### Controls - make graphic
+
+Use the arrow keys for your movement. 
+
+Press the X key to phasers.
+
+Press Z to fire quantum torpedoes. If you get a Dilithium Crystal powerup, you will unleash a supercharged TORPEDOES FULL SPREAD attack that will unleash hell upon the Borg!
+
+### Mission Report - make graphic
+
+Imagine it is 1996 and Paramount wants to make a movie tie in game for "Star Trek First Contact." Imagine that Paramount wanted to have this tie in game come out super fast... on the NES! (Or [Pico 8](https://www.lexaloffle.com/pico-8.php) in this Case!)
+
+### Backstory - make graphic
+
+
+### Credits - make graphic
 
 This project was a recovery from dibailtating mental health issues. 
 Pico 8 and the Lazy Devs tutotials have been very helpful in reawakening a creative part of me.
