@@ -3,6 +3,7 @@ version 37
 __lua__
 --"star trek:collective mischief"
 --by chaz(🐱)
+--version 0.7.7
 --tng music by phlox
 --shmup tutorial by lazy devs
 --playtesting by cat
@@ -12,6 +13,7 @@ __lua__
 -- nicer screens
 
 function _init()
+	version="0.7.7"
 	cls(0)
 	startscreen()
 	debug=""
@@ -23,58 +25,46 @@ function _init()
 	stars={}
 	for i=1,100 do
 		local newstar={}
-		newstar.x=flr(rnd(128))
-		newstar.y=flr(rnd(128))
+		newstar.x=flr(rnd(133))
+		newstar.y=flr(rnd(133))
 		newstar.spd=rnd(3.75)+(0.15)
 		add(stars,newstar)	
 	end
 	flash=0
 	flash_r=0
+	mode=""
 end
 
-function _update()
-	t+=1
-	blinkt+=1
-	if mode=="game" then
-		update_game()
-	elseif mode=="start" then
-		update_start()
-	elseif mode=="over" then
-		update_over()
-	elseif mode=="cutscene1" then
-		update_cut1()
-	elseif mode=="wavetxt" then
-		update_wavetxt()	
-	elseif mode =="win" then
-		update_win()		
-	end		
-end
-
-function _draw()
-	
-	doshake()
-	
-	if mode=="game" then
-		draw_game()
-	elseif mode=="start" then
-		draw_start()
-	elseif mode=="over" then
-		draw_over()
-	elseif mode=="cutscene1" then
-		draw_cut1()
-	elseif mode=="wavetxt" then
-		draw_wavetxt()	
-	elseif mode =="win" then
-		draw_win()			
-	end
-	
-		print(debug,0,9,7)
-		
-		camera()
+function state_switch(state)
+  if state=="start" then 
+    _update = update_start
+	_draw = draw_start
+	mode=state
+  elseif state=="cutscene1" then
+    _update = update_cut1
+	_draw = draw_cut1
+	mode=state
+  elseif state=="game" then  
+    _update = update_game
+	_draw = draw_game
+	mode=state
+  elseif state=="over" then
+  	_update = update_over
+    _draw = draw_over
+	mode=state
+  elseif state=="wavetxt" then
+    _update = update_wavetxt
+    _draw = draw_wavetxt
+	mode=state
+  elseif state=="win" then
+    _update = update_win
+    _draw = draw_win
+	mode=state
+  end
 end
 
 function startgame()
-	mode="wavetxt"
+	state_switch("wavetxt")
 	
 	wave=0
 	t=0
@@ -95,9 +85,10 @@ function startgame()
 	ship.ded=false
 	--starting game conditions
 	shields=5
-	bul2cnt=3
+	cher=1
+	bul2cnt=1
 	pulse_p=1.45
-	q_tor=10
+	q_tor=25
 	firefreq=20
 	--score and hiscore
 	score=0
@@ -110,7 +101,6 @@ function startgame()
 	muzzle2=0
 	torspr=0
 	invul=0
-	cher=0
 	torout=0
 	delay=120
 	faceanim=224
@@ -135,17 +125,19 @@ function startgame()
 end
 
 function startcut1()
-	mode="cutscene1"
+	state_switch("cutscene1")
 
 	parts2={}
 end
 
 function startscreen()
 
-	mode="start"
+	state_switch("start")
 	music(5)
+	t=0
 	
 end
+
 -->8
 --tools
 -- baby's first function
@@ -198,8 +190,8 @@ function animstars()
 	for i=1,#stars do
 		local mystar=stars[i]
 		mystar.y=mystar.y+mystar.spd
-		if mystar.y>120 then
-			mystar.y-=120
+		if mystar.y>128 then
+			mystar.y-=128
 		end	
 	end
 end
@@ -433,10 +425,8 @@ function dis_spr(mynum,loc)
 	local digit2=0
 	local digit3=0
 	local digit4=0
-	--pickups,topright
-	if loc==2 then locx=118 locy=0 end
 	--tor,lowright
-	if loc==3 then locx=92 locy=119 end
+	if loc==3 then locx=99 locy=119 end
 	--score,uppleft
 	if loc==4 then locx=30 locy=0 end	
 	if mynum==0 then
@@ -560,6 +550,9 @@ end
 -->8
 -- update functions
 function update_game()
+	t+=1
+	blinkt+=1
+	doshake()
 	--reset vars
 	ship.sx=0
 	ship.sy=0
@@ -612,13 +605,8 @@ function update_game()
 				btimer2=35
 				shake=10
 				muzzle2=5
-				invul=30	
-			elseif cher==0 and bul2cnt>=1 then
-				tor_fire(ship,0.5,2) sfx(1)
-				muzzle=6
-				btimer2=35
-				bul2cnt-=1
-				sfx(1)
+				invul=30
+				bul2cnt=0
 			else
 			torout=15
 			sfx(4)
@@ -729,9 +717,9 @@ function update_game()
 					applydam(myen,mybul,mybul.type)
 					del(buls2,mybul)
 				elseif mybul.type=="bomb" then
+					smol_shwave(mybul.x,mybul.y)	
 					applydam(myen,mybul,mybul.type)
 					del(buls2,mybul)
-					smol_shwave(mybul.x,mybul.y)	
 				end
 				if myen.hp<=0 then
 					killen(myen)
@@ -850,13 +838,6 @@ function update_game()
 			plogic2(mypick)
 		end	
 	end
-	
-	for mypick in all(pickups3) do
-		if col(mypick,ship) and ship.ded!=true then
-			del(pickups3,mypick)
-			plogic3(mypick)
-		end	
-	end
 
 	for myebul in all(muh_lazer) do
 		move(myebul)
@@ -880,7 +861,7 @@ function update_game()
 		music(8)
 	end
 	if delay==0 then
-		mode="over"
+		state_switch("over")
 		lockout=t+50
 		return
 	end
@@ -905,6 +886,8 @@ end
 	
 -- start screen check for x/o
 function update_start()
+	blinkt+=1
+	t+=1
 	animstars()
 	if btn(4)==false and btn(5)==false then
 		btnreleased=true
@@ -918,6 +901,8 @@ function update_start()
 end
  -- cutscene handoff
 function update_cut1()
+	blinkt+=1
+	t+=1
 	if btn(4)==false and btn(5)==false then
 		btnreleased=true
 	end
@@ -932,6 +917,8 @@ end
 -- game over
 
 function update_over()
+	blinkt+=1
+	t+=1
 	if t<lockout then
 		return
 	end
@@ -940,7 +927,7 @@ function update_over()
 	end
 	if btnreleased then
 		if btnp(5) or btnp(4) then
-			mode="start"
+			state_switch("start")
 			music(5)
 			btnreleased=false
 		end
@@ -948,6 +935,8 @@ function update_over()
 end
 
 function update_win()
+	blinkt+=1
+	t+=1
 	lockout=t+30
 	if t<lockout then
 		return
@@ -969,7 +958,7 @@ function update_wavetxt()
 	wavetime-=1
 	if wavetime<=0 then
 	
-		mode="game"
+		state_switch("game")
 		
 		btimer=0
 		btimer2=0
@@ -1026,19 +1015,6 @@ function draw_game()
 	end
 	
 	for mypick in all(pickups2) do
-		local mycol=7
-		if t%4<2 then
-			mycol=14
-		end
-			for i=1,15 do
-				pal(i,mycol)
-			end	
-		drawout(mypick)
-		pal()
-		drwmyspr(mypick)
-	end
-	
-	for mypick in all(pickups3) do
 		local mycol=7
 		if t%4<2 then
 			mycol=14
@@ -1175,12 +1151,7 @@ function draw_game()
 		print(score.."00",55,kx,8)
 		print("?!?!?!?!",75,kx,11)
 	end
-	--pickups
-	spr(203,109,0)
-	pal(7,8)
-	pal(6,2)
-	dis_spr(cher,2)
-	pal()
+	
 	
 	--lcars ui for torpedoes
 	pal(12,8)
@@ -1198,8 +1169,11 @@ function draw_game()
 	
 	--torpedo related alerts
 	if torout>14 then
-		popfloat("torpedoes depleted!",ship.x,ship.y)
+		popfloat("no torpedoes!",ship.x,ship.y)
 	end
+
+	--pickups
+	sspr(88,96,8,8,90,119,7,7)
 
 	--lcars ui for shields
 	spr(104,0,119)
@@ -1239,6 +1213,7 @@ function draw_game()
 	--sprite to animate
 	--spr(faceanim,69,-1)
 	--print("we are borg!",78,1,8)
+	print(debug,0,9,7)
 	
 end
 
@@ -1250,9 +1225,10 @@ function makescore(val)
 end
 
 function draw_start()
+	blinkt+=1
 	cls(0)
 	warps()
-	
+	cprint(version,64,120,1)
 	spr(231,60,75,2,2)
 	spr(18,53,82)
 	--sspr(16,8,5,6,48,48,32,32) promo shots
@@ -1300,7 +1276,7 @@ function draw_cut1()
 	cprint("are gonna     for",64,60,11)
 	cprint("pay",76,60,8)
 	cprint("shootin' up my ride!",64,70,11)
-	cprint("press x to begin killing borg",64,100,blink())
+	cprint("press x to save earth",64,100,blink())
 end
 
 function draw_win()
@@ -1313,6 +1289,7 @@ cprint("good job!",64,30,8)
 end
 
 function draw_wavetxt()
+	
 	draw_game()
 	-- wave ui
 	pal(12,8)
@@ -1357,10 +1334,10 @@ t+=1
 	atkfreq=47
 	firefreq=20
 	placeens({
-		{0,0,2,2,2,2,2,2,0,0},
+		{0,0,0,0,2,0,0,0,0,0},
 		{0,1,1,1,1,1,1,1,1,0},
-		{2,1,1,1,1,1,1,1,1,2},
-		{2,2,2,2,2,2,2,2,2,2}
+		{0,1,1,1,1,1,1,1,1,0},
+		{1,2,1,2,1,2,1,2,1,2}
 	})
 	end
 	if wave==3 and wavetime<=0 then
@@ -1369,7 +1346,7 @@ t+=1
 	firefreq=20
 	placeens({
 		{3,1,2,3,3,3,3,2,1,3},
-		{2,1,2,3,3,3,1,2,1,2},
+		{2,1,2,2,2,2,1,2,1,2},
 		{2,1,2,1,1,1,1,2,1,2},
 		{0,0,0,1,2,2,1,0,0,0}
 	})
@@ -1393,7 +1370,7 @@ t+=1
 		{4,4,4,4,5,0,4,4,4,4},
 		{0,4,4,4,0,0,0,4,4,4},
 		{0,0,4,4,4,0,0,0,4,4},
-		{0,0,0,4,0,0,3,3,3,4}
+		{0,0,0,4,0,0,0,0,0,4}
 	})
 	end
 	-- assim fed ships are angry
@@ -1458,7 +1435,7 @@ function nextwave()
 	wave+=1
 	ebuls={}
 	if wave>lastwave and ship.ded!=true then
-		mode="win"
+		state_switch("win")
 		lockout=t+50
 		music(2)
 		if score>hiscore then
@@ -1470,11 +1447,11 @@ function nextwave()
 	else
 		if wave==1 then
 			music(-1,1000)
-			music(1)
+			music(22)
 		else
 			music(0)
 		end
-			mode="wavetxt"
+			state_switch("wavetxt")
 			wavetime=80
 	end
 	
@@ -1788,21 +1765,18 @@ function killen(myen)
 	explodes(myen.x,myen.y)
 	del(enemies,myen)
 	sfx(2)
-	
-	local cherchance=0.09
 	local reschance=0.009
-	local torchance=0.12
+	local cherchance=0.09
 	if shields==1 then
-		res_chance=0.33
-	end	
+		reschance=0.25
+	elseif shields>=2 then
+		reschance=0.009
+	end		
 	if myen.mission=="assim" then
 		if rnd()<0.75 then
 			pickattack()
 		end
-		cherchance=0.2
-	end
-	if rnd()<torchance then
-		drop_pickup3(myen.x,myen.y)
+		cherchance=0.15
 	end
 	if rnd()<reschance then
 		drop_pickup2(myen.x,myen.y)
@@ -1830,18 +1804,13 @@ function drop_pickup2(pix,piy)
 	add(pickups2,mypick)
 end
 
-function drop_pickup3(pix,piy)
-	local mypick=makespr()
-	mypick.x=pix
-	mypick.y=piy
-	mypick.sy=0.85
-	mypick.spr=219
-	add(pickups3,mypick)
-end
+
 
 function plogic(mypick)
 	
 	cher+=1
+	bul2cnt+=1
+	popfloat("torpedoes!",mypick.x+4,mypick.y)
 	smol_shwave(mypick.x,mypick.y,8)
 	if cher>=10 then
 		if shields<5 then
@@ -1854,7 +1823,7 @@ function plogic(mypick)
 			sfx(42)
 			bul2cnt+=5
 			score+=30
-			popfloat("torpedoes earned!",mypick.x+4,mypick.y)
+			popfloat("torpedoes!",mypick.x+4,mypick.y)
 		end
 	else
 	sfx(42)
@@ -1865,17 +1834,11 @@ function plogic2(mypick)
 	if shields<5 then
 		shields+=1
 		sfx(42)
-		popfloat("shields restored!",mypick.x+4,mypick.y)
+		popfloat("shields!",mypick.x+4,mypick.y)
 	else
 		sfx(04)
 		popfloat("shields at max!",mypick.x+4,mypick.y)
 	end
-end
---torpedo recharge
-function plogic3(mypick)
-	bul2cnt+=3
-	sfx(42)
-	popfloat("torpedoes earned!",mypick.x+4,mypick.y)
 end
 -->8
 --bullets
@@ -1940,21 +1903,6 @@ function fireshotmod(myen,num,spd,base)
 	
 end
 
-function tor_fire(newbul,ang,spd)
-	local newbul=makespr()
-	newbul.x=ship.x-1
-	newbul.y=ship.y-3
-	newbul.spr=36
-	newbul.colw=7
-	newbul.sx=0
-	newbul.sy=6
-	newbul.dmg=5
-	newbul.type="qtor"
-	newbul.sx=sin(ang)*spd
-	newbul.sy=cos(ang)*spd
-	add(buls2,newbul)
-end
-
 function aimedfire(myen,spd)
 	local myebul=fire(myen,0,spd)
 	local ang=atan2(ship.y-(myebul.y),ship.x-(myebul.x))
@@ -1975,13 +1923,11 @@ function applydam(myen,mybul,kind)
 	if myen.mission!="flyin" then
 		if kind=="pulse" then
 			myen.hp-=pulse_p
-		elseif kind=="qtor" then
-			myen.hp-=mybul.dmg
 		elseif kind=="bomb" then
 			myen.hp-=mybul.dmg
 			shake=6
 		elseif kind=="ram" then
-			myen.hp-=10
+			myen.hp-=15
 			shields-=1
 			invul=45
 			shake=8
@@ -1991,7 +1937,7 @@ function applydam(myen,mybul,kind)
 	return myen
 	
 end
-
+--[[
 function fire_muh_lazer(myen)
 	local newbul=makespr()
 	sfx(37)
@@ -2012,7 +1958,7 @@ function fire_muh_lazer(myen)
 	newbul.sy=1
 	add(muh_lazer,newbul)
 end
-
+]]--
 function cherbomb()
 	local spc=0.25/(cher*2)
 	flash=3
@@ -2308,14 +2254,14 @@ b3665b533355b3333333b5555556553b3366535bbb55b3333333b555555655b3bb665b5bbb553333
 5844448507dd000058d44d8507dd000d584404850000000000000000000000000000000000000000000000000017cd0006cccc60878808800000000000000000
 58888a85d0777dd758888a8577777dd758884a8500000000000000000000000000000000000000000000000000711d0006111160888808800000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dd00000666600088088000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000880000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d88d000000000000000000000000000000000000
-07dddd7d6d4444d6d000d7dd6d0440d6777dd7dd000000000000000000000000000000000000000000000000c88c000000000000000000000000000000000000
-0007d7dd64044046dddd77dd64dddd46d007ddd7000000000000000000000000000000000000000000000000c88c000000000000000000000000000000000000
-0dd00d7764dddd467007dd0064400446ddd00770000000000000000000000000000000000000000000000000c88c000000000000000000000000000000000000
-07dddd7d58400485dd0777dd584444857777dddd000000000000000000000000000000000000000000000000d88d000000000000000000000000000000000000
-0000000058844a850000000058888a85000000000000000000000000000000000000000000000000000000000880000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dddd000000000000000000000000000000000000
+07dddd7d6d4444d6d000d7dd6d0440d6777dd7dd0000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
+0007d7dd64044046dddd77dd64dddd46d007ddd70000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
+0dd00d7764dddd467007dd0064400446ddd007700000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
+07dddd7d58400485dd0777dd584444857777dddd0000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
+0000000058844a850000000058888a8500000000000000000000000000000000000000000000000000000000dddd000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000
 00000000000000000000000000000000000000000000006600000000000000666600000000000000660000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000056650000000000005666650000000000005665000000000000000000000000000000000000000000000
 bb055550bb055550bb055550bb055550bb0555500000665566000000000066566566000000000066556600000000000000000000000000000000000000000000
@@ -2519,6 +2465,8 @@ c11100000f5530f5000f5530a5000f55212500125000f5530f5000f5531f5000f5520d5520d5000d
 010a00000e003296000e0031e600286151d6052b605276150e003296052b6151e600286151d6452b615276051f6501f6301f6201e6001f6251f6251f625276050e003356052b6051e605106111c6112862133631
 5c030000131212513131151381711b1613b1513b1413c14116141291413913135131321312d13228132221321c13216132131321d1320e1320d1320a132091320813206122051220412203122031220312201120
 5c0400000817120161181610f17108171171711017109171071710d1610f161091510715106151051410514105132041320313202132021320113201132001320113201132011320112200122001220012200122
+002100001a5401f54023540215401d54028540265402654026540265402654026540265402654023540285402c5402a540285402d5402f5402f5402f5402f5400050000500005000050000500005000050000500
+002100001a7401f74023740217401d74028740267402674026740267402674026740267402674023740287402c7402a740287402d7402f7402f7402f7402f7400070000700007000070000700007000070000700
 __music__
 04 05060744
 04 08090a44
@@ -2542,4 +2490,5 @@ __music__
 00 21223344
 00 20243244
 02 1e1d3444
+04 62643837
 
