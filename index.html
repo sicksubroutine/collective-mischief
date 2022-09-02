@@ -122,6 +122,23 @@
 		evt.preventDefault();
 		Module.pico8DragStop();
 	}
+
+	// download (pico-8 0.2.4d web exports can save a .wav file)
+	function download_browser_file(filename, contents)
+	{
+	  var element = document.createElement('a');
+	  if (filename.substr(filename.length - 7) == ".p8.png")
+	  	element.setAttribute('href', 'data:image/png;base64,' + encodeURIComponent(contents));
+	  else if (filename.substr(filename.length - 4) == ".wav")
+	  	element.setAttribute('href', 'data:audio/x-wav;base64,' + encodeURIComponent(contents));
+	  else
+	  	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(contents));
+	  element.setAttribute('download', filename);
+	  element.style.display = 'none';
+	  document.body.appendChild(element);
+	  element.click();
+	  document.body.removeChild(element);
+	}
 	// --------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -964,7 +981,7 @@ canvas{
 
 .p8_start_button{
 	cursor:pointer;
-	background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAADcUlEQVR4Ae2dPWrcQBTHx4prQWBFCkPKFUKFwIUrn8P94hsYFeoGX2BzguDLuHJhSBFM3Lty5xOkkFEUaUYfu1pp3uj3Y1lmZ2eent7/fbQK4JMwSk5hVhe5mBBkaTy5hROF1U8B/KCRBAgA4Afu1/LxMwwBVkdACOAfYZRQgtb22h0d0T3Q8+GxtiHEsJQkAEN4pgEG665H2iItCAEAxJClMUEgMgC+Vg+FDABKKaXOHPFDq61S6l69lovudfti793y+0f05eP9BdXN0W//LBftb9t128nGjtHIUgTuaNAd3HLdSH/j+eqM7W6vkdUJcK9ebUGp79cbS4cpY7Oq7ztVAedODYB5zDpVAQAyydKYIICRuwt1d9FcVzvtte28bV3/rt812rTZb/vW+1zjs1yMfmPdK4BxbfvLZtMmQPtut59DzvsmgPGFBwpgjEtHQG0VaRPMuFZKKaWLfJKABctrtn87XONRd/dv1vND9k1njpdhagH2b83Eqfzu7cWNu8aMLq0ZbXaoVa+YykLvs4bYl049g8IoEe2/eAEmQaKKAIeSpfFani6+2blK4Lh/YZQ429ZndYwK8BYXEnxOH5adW7AcNDGRQxgBqAYf58EkAowy4uzoE9OCjtTs1+8/fubybK63BRDdxyQJFkYJYwPA0xElZgj7ilWAsvMy5Vx5E3/ex2WdDm5kZOvcAhAyryoAkH8xAoRHAIDlOq2YCgijBPFg+goAAFiwe4gZwnOSpbEIm94SRokr89PmCoBzpd32xNH0PYVbu91t9ZGVQAsM4Y/3l5OmXpbGJ23WtGVD7mdp3FhI8f/cDxkur66/f/uqlFJX17I890SA56fHMvTPT4+X0jQQT5bGWm2rT2MkON7rz7yZBNX64eGnn1m24NN1kQ/xsHJynuRdC2VX0Wpr+7cqgqoObIdhdFWVea2LvJ7gjeazudG73a0ucl3k1U/COw2bG12GVRf55kZ3dKf/KmBAy4IRAzZLY1tSG/epgOk1GPUXAiw8SIZMFyI12ZAYuDmQMEoQC8C/bkZfPhzaIuH2quzKCJPWMBJd5P69VICuCAAAo8jSeLZbIIkwStaV1IBUxOtodJF7Emuhb7Ks2wE15A/+1DKsJ72cbkFhlJyiL3WYBRosAAAAwCdhlBAEAF/J0pggAAAAAAAAzMhfKZU3X/f0wXEAAAAQdEVYdExvZGVQTkcAMjAxMTAyMjHjWbbBAAAAAElFTkSuQmCC");
+	background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAAD10lEQVR4Ae2dP2ukQBjGJ3K1cBC5InDlumIhpEiVzu+QXvYbBAu7YbsU+QpHPkm6VCkCVxzhUl53pDjIBwhXzGbiro66izvq+PshMv4ZnXnf53nfVgA0kcThCFflB9HEfzCfUAIAULUAAABomwAzJInDUaxDFvlUQmZtqR7yHBYSMBh+EBGE6ZRvABii9lEogeZhxXnHsBr2HQZZ5N1f9jA4ldG1vSgHdNzpyVhsKxZCiLV4UYPmcXVi61x9xgPG6Fcv1aB6Nk03vblzp/YjQzGWHiDFojm4atwq4fI7prmD+EBVpFFX4KpCcYCl9qvk37swTa6aaicYtX3Gih9EBAGxglWuz8T12e5Y36mOTe+bxuVzeW7tN03fr66t9b+1/7KALPL9or8zbk2ANuzO9mqnmL5pSkB1bvM6u7zvWgLqNpzEYacE1MalIaAmR5oSVjt2zwH1KjMloDaIXRJQ+3T8Dji8B1QV1FpbG5TYet+U+Nr1HNADhPCDqHnrrS84y6aLAIyC/drGvBfvIZdhIQH0PYABOw0liB4A+7qG7Q/mAD+IEOKQCXh7fSZk0D9JHB7wCAAA6BmTwg8i8gdAFYKDkUXe49c8AjosLQmQYiHSpTo7KcBRJ0CKxef4/r18Oeciu765tfKfdKm0v5G/Hg/d8RxzwEmz/NfpxiLy/n2Tf/FC4bZSaj+E/9kD1GAbP4iI1REdsFF96mkT4IAqfhC9vT4fxQRjaACHr38K3WJT4uvb/YfYp6J9x/rzBPvWdgLIBw4AgCQOnfuTKwsDrEdDdoMsW+ljtAmoXZLngOp3fjqU86RYiHSpzt1n9ZyAn79+29f++cXl0+ODunx6fDi/uMyy1frm1nb09fj+vXzZrIkTB4qPGnz/9lUI8efvP3V5d/fD3iLSpYq7EGKdep9j8dI69YsbPeDp8UFcXGoHNL/sB9Hb63Of8i+FXl/OiCQOpVjow34P2NT9dPnZA9RgDKGxVoj0YW13fhDpBOhDR38UCehNYkXemuAkDu1rv2wCG9HXObe8N1VkjPYvmWDnpv1C5Jr2la5lkZsEnmWr0yuZZStZ5LLI9eW82uDxOL2SKqyyyE+vZEN12nKAoWTBgQ02iUOTqGvv44D+c7DXo2MnAIdtNYmON0nAIaHs0iQ63uwxjjjAHSF7pAEcxA8iggDO1eu+SOKQBIwFmjDdhtYHsy7u4KCgUCJ9izLHHmFK0mj4MnoE15FFPtu9e9Narh9E6HWqDpizzyh0rpQgAHCr6FOC5peASQiTyoADADRJHGLZYwVo2OBSM2laAAAAAAAwN/4D/yh7a/FdfloAAAAQdEVYdExvZGVQTkcAMjAxMTAyMjHjWbbBAAAAAElFTkSuQmCC");
 	-repeat center;
 	-webkit-background-size:cover; -moz-background-size:cover; -o-background-size:cover; background-size:cover;
 }
@@ -1050,7 +1067,9 @@ canvas{
 
 			<!-- used for clipboard access & keyboard input; displayed and used by PICO-8 only once needed. can be safely removed if clipboard / key presses not needed. -->
 			<!-- (needs to be inside p8_playarea so that it still works under Chrome when fullscreened) -->
-			<textarea id="codo_textarea" class="emscripten" style="position:absolute; left:-9999px; height:0px; overflow:hidden"></textarea>
+			<!-- 0.2.5: added "display:none"; pico8.js shows on demand to avoid mac osx accent character selector // https://www.lexaloffle.com/bbs/?tid=47743 -->
+
+			<textarea id="codo_textarea" class="emscripten" style="display:none; position:absolute; left:-9999px; height:0px; overflow:hidden"></textarea>
 
 		</div> <!--p8_playarea -->
 
