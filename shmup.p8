@@ -3,77 +3,77 @@ version 37
 __lua__
 --"star trek:collective mischief"
 --by chaz(🐱)
---version 0.7.7
+--version 0.7.8
 --tng music by phlox
 --shmup tutorial by lazy devs
 --playtesting by cat
 
 --todo
 -------------
--- nicer screens
 
 function _init()
-	version="0.7.7"
+	version="0.7.8"
 	cls(0)
-	startscreen()
+	
 	debug=""
 	blinkt=1
 	t=0
 	lockout=0
 	shake=0
 	cartdata("star_trek_shmup")
-	stars={}
-	for i=1,100 do
-		local newstar={}
-		newstar.x=flr(rnd(133))
-		newstar.y=flr(rnd(133))
-		newstar.spd=rnd(3.75)+(0.15)
-		add(stars,newstar)	
-	end
 	flash=0
 	flash_r=0
-	mode=""
+	mode1=""
+	
+	--starfield test
+	star_modes={"slow","normal","fast","gold"}
+	mode=1--1:slow 2:normal 3:fast
+							--4:green   
+	stars={}
+	star_density=150
+	star_speed=-1.6
+	for i=1,star_density do
+		spawn_star()
+	end
+	startscreen()
 end
 
 function state_switch(state)
   if state=="start" then 
     _update = update_start
 	_draw = draw_start
-	mode=state
+	mode1=state
   elseif state=="cutscene1" then
-    _update = update_cut1
-	_draw = draw_cut1
-	mode=state
+  	_update = update_cut1
+			_draw = draw_cut1
+	mode1=state
   elseif state=="game" then  
     _update = update_game
 	_draw = draw_game
-	mode=state
+	mode1=state
   elseif state=="over" then
   	_update = update_over
     _draw = draw_over
-	mode=state
+	mode1=state
   elseif state=="wavetxt" then
     _update = update_wavetxt
     _draw = draw_wavetxt
-	mode=state
+	mode1=state
   elseif state=="win" then
     _update = update_win
     _draw = draw_win
-	mode=state
+	mode1=state
   end
 end
 
 function startgame()
 	state_switch("wavetxt")
-	
 	wave=0
 	t=0
 	lastwave=9
 	btimer=1000
 	btimer2=1000
-	
 	nextwave()
-
 	ship=makespr()
 	ship.x=63
 	ship.y=90
@@ -87,7 +87,7 @@ function startgame()
 	shields=5
 	cher=1
 	bul2cnt=1
-	pulse_p=1.45
+	pulse_p=2.5
 	q_tor=25
 	firefreq=20
 	--score and hiscore
@@ -103,8 +103,7 @@ function startgame()
 	invul=0
 	torout=0
 	delay=120
-	faceanim=224
-	wavetime=80
+	wavetime=220
 	atkfreq=40
 	nextfire=0
 	hit=0
@@ -116,84 +115,54 @@ function startgame()
 	explode={}
 	parts={}
 	parts2={}
-	muh_lazer={}
+	
 	shwaves={}
 	pickups={}
 	pickups2={}
-	pickups3={}
+	
 	floats={}
+	star_speed=10
 end
 
 function startcut1()
 	state_switch("cutscene1")
-
+	mode=4
+	star_speed=10
 	parts2={}
+	t=0
+	b=0
+	subphs=1
+	off_1=0
+	off_2=0
+	music(23)
 end
 
 function startscreen()
-
 	state_switch("start")
+	mode=2
 	music(5)
 	t=0
-	
+	subphs=1
+	off_1=0
+	off_2=0
+	ms_y1=75
+	ms_y2=82
+	b=1000
 end
 
 -->8
 --tools
--- baby's first function
-function warps()
-
-	for i=1,#stars do
-		local mystar=stars[i]
-		local scol=5
-		
-	if mystar.spd<.17 then
-		spr(44,mystar.x,mystar.y)
-		scol=0
-		elseif mystar.spd<1.25 then
-			scol=1
-		elseif mystar.spd<2.25 then
-			scol=0	
-			line(mystar.x,mystar.y,mystar.x,mystar.y+3,7)
-	end
-	
-	pset(mystar.x,mystar.y,scol)
-	end
-end
-
-function gamefield()
-	for i=1,#stars do
-		local mystar=stars[i]
-		local scol=1
-	if mystar.spd<0.75 then
-		scol=1
-		elseif mystar.spd<2 then 
-			scol=5
-		elseif mystar.spd<3.50 then
-			scol=6
-	end
-	pset(mystar.x,mystar.y,scol)
-	end
-end
-function star_cut1()
-	for i=1,#stars do
-			local mystar=stars[i]
-			local scol=1	
-			if mystar.spd<.21 then			
-			elseif mystar.spd<.85 then
-					scol=6
-			end
-		pset(mystar.x,mystar.y,scol)
-	end
-end
-function animstars()
-	for i=1,#stars do
-		local mystar=stars[i]
-		mystar.y=mystar.y+mystar.spd
-		if mystar.y>128 then
-			mystar.y-=128
-		end	
-	end
+function spawn_star()
+	local star={}
+  star.x=rnd(128)
+  star.y=rnd(256)-128
+  star.spd=rnd(1.5)+.5
+  star.t=4
+  star.trail=0
+  star.c=7
+  star.mode=star_modes[mode]
+  star.seed=rnd(#stars)
+  add(stars,star)
 end
 
 function drawout(myspr)
@@ -422,9 +391,6 @@ function dis_spr(mynum,loc)
 	local pos=5
 	local digit=0
 	local start=0
-	local digit2=0
-	local digit3=0
-	local digit4=0
 	--tor,lowright
 	if loc==3 then locx=99 locy=119 end
 	--score,uppleft
@@ -547,12 +513,149 @@ end
 function cprint(txt,x,y,c)
 	print(txt,x-#txt*2,y,c)
 end
+
+function starfield_update()
+
+ --add new stars
+ if #stars<star_density then
+  local star={}
+  spawn_star()
+ end
+   
+ for star in all(stars) do
+  
+  --apply speed
+  local velocity=mid(0,star.spd+star_speed,10)
+  star.y+=velocity
+  
+  --loop & remove excess
+  if star.y>140 then
+	  if #stars==star_density then
+	   star.y=rnd(128)-128
+	  elseif #stars>star_density then
+	   del(stars,star)
+	  end 
+  end 
+ end 
+ --modes
+ local mod=star_modes[mode]
+ if mod=="normal" then
+  if star_speed>0 then
+	  star_speed-=.2
+	 elseif star_speed<0 then
+	  star_speed+=0.01
+  end
+  star_density=100  
+ elseif mod=="fast" then
+  if star_speed<0 then
+   star_speed+=.05   
+  elseif star_speed>=0 then
+   star_speed+=.08
+  end
+  
+  star_speed=mid(-1,star_speed,10)
+  
+  star_density+=.5
+  star_density=mid(100,star_density,150)
+ 
+ elseif mod=="slow" or mod=="gold" then
+ 
+  if star_speed<1 then
+   star_speed-=.01
+  else
+   star_speed-=.1
+  end
+  star_speed=mid(-1.6,star_speed,10)
+  
+  star_density+=.5
+  star_density=mid(150,star_density,200) 
+ 
+ end
+end
+
+function starfield_draw()
+ for star in all(stars) do
+  
+  --trails
+  local gradient={7,6,13,1,1}
+  star.trail=star.spd+star_speed
+  
+  --color / depth
+  local grad=0
+  if star.spd>1.7 then
+   star.c=7
+   star.trail*=2
+   grad=0
+  elseif star.spd>1.4 then
+   star.c=6
+   star.trail*=1.4
+   grad=1
+  elseif star.spd>0.8 then
+   star.c=13
+   star.trail*=1
+   grad=2
+  elseif star.spd>0 then
+   star.c=1
+   star.trail*=0.5
+   grad=3
+  end
+   
+  star.trail=mid(1,star.trail,100)
+  
+  for i=1,star.trail do
+   local pos=i/star.trail
+   
+   --modes
+	   if star.mode=="normal" then
+      //do nothing
+
+	   elseif star.mode=="fast" then
+	    star.c=gradient[flr(pos*(#gradient-grad))+grad]
+	   
+	   elseif star.mode=="slow" 
+	       or star.mode=="gold" then
+	    
+	    local slow={0,0,0,0,1,1,13,13,6,00}
+	    local gold={0,0,1,13,6,7,11,3,11}
+		   local mod=slow
+		   	      
+		    if mode==1 then
+       mod=slow
+		    elseif mode==4 then
+		     mod=gold
+		    end
+
+	    local s=flr(#mod*abs(sin((t+star.seed+star.x+star.y)/200)))
+
+	    if star_speed<7 then
+	     star.c=mod[s]
+	    else
+	     --star.c=7
+	    end
+	    
+
+	   end
+
+   pset(star.x,star.y-i,star.c)
+  end
+  
+  --set mode
+  if (mode==1 or mode==4) 
+  and pget(star.x,star.y)==0 then
+   star.mode=star_modes[mode]
+  elseif star.y<0 then
+   star.mode=star_modes[mode]
+  end
+  
+ end
+end
 -->8
 -- update functions
 function update_game()
 	t+=1
 	blinkt+=1
 	doshake()
+	starfield_update()
 	--reset vars
 	ship.sx=0
 	ship.sy=0
@@ -762,7 +865,7 @@ function update_game()
 					shake=5
 					hit=2
 					invul=30
-					flash_r=3
+					flash_r=4
 					shields-=1
 					sparks(ship.x,ship.y)
 					applydam(myen,mybul,"bomb")
@@ -773,7 +876,7 @@ function update_game()
 					shake=10
 					sfx(2)
 					hit=2
-					flash_r=3
+					flash_r=4
 					ship.y=100
 					sparks(ship.x,ship.y)
 					explodes(ship.x,ship.y,true)
@@ -796,33 +899,14 @@ function update_game()
 				invul=45
 				shake=12
 				hit=2
-				flash_r=3
+				flash_r=4
 				ship.y=100
 				sparks(ship.x,ship.y)
 				explodes(ship.x,ship.y)
 			end		
 		end
 	end
-
-	if invul<=0 then
-		for myebul in all(muh_lazer) do
-			myebul.age+=1
-			if col(myebul,ship) and ship.ded!=true then
-				sfx(2)
-				shields-=4
-				invul=45
-				shake=12
-				del(muh_lazer,myebul)
-				ship.x=60
-				ship.y=100
-				sparks(ship.x,ship.y)
-				explodes(ship.x,ship.y,true)
-			end
-			if myebul.age>200 then
-				del(muh_lazer,myebul)
-			end		
-		end
-	end
+	
 	-- collision pickups x ships
 	-- torpedo spread
 	for mypick in all(pickups) do
@@ -838,12 +922,12 @@ function update_game()
 			plogic2(mypick)
 		end	
 	end
-
+--[[
 	for myebul in all(muh_lazer) do
 		move(myebul)
 		animate(myebul)
 	end
-	
+	]]--
 	--u ded
 	if shields<=0 then	
 		invul=10000
@@ -877,41 +961,118 @@ function update_game()
 	if muzzle2>2 then
 		muzzle2-=2
 	end
-	animstars()
-
-	if mode=="game" and #enemies==0 and ship.ded!=true and wave!=9 then
+	
+	if mode1=="wavetxt" and wave<9 then
+		mode=3
+		star_speed+=0.05
+		if star_speed>=7 then
+			star_speed=7
+		end
+	elseif mode1=="game" and wave<9 then
+		if mode==3 then
+			star_speed-=0.27
+			if star_speed<=3 then
+				mode=1
+			end
+		elseif mode==1 then
+			if star_speed>-0.5 then
+				star_speed-=0.07
+			else	
+				star_speed=-0.5
+			end	
+		end
+	elseif mode1=="wavetxt" and wave>=8 then
+		mode=4
+		star_speed=5
+	elseif mode1=="game" and wave>=8 then
+		mode=4
+	end
+	
+	if mode1=="game" and #enemies==0 and ship.ded!=true and wave!=9 then
 		nextwave()
 	end
 end
-	
 -- start screen check for x/o
 function update_start()
 	blinkt+=1
-	t+=1
-	animstars()
-	if btn(4)==false and btn(5)==false then
-		btnreleased=true
-	end
-	if btnreleased then
-		if btnp(5) or btnp(4) then
-			startcut1()
-			btnreleased=false
+	t+=1	
+	starfield_update()
+	if subphs==1 then	
+		mode=1
+		star_speed=0.5
+		if btn(4)==false and btn(5)==false then
+			btnreleased=true
 		end
-	end
+		if btnp(5) or btnp(4) then
+			btnreleased=false
+			b=t
+		end		
+		if btnreleased then
+			if b+0.25*30<t then
+				subphs=2
+			end	
+		end
+	elseif subphs==2 then
+		if b+0.25*30<t then
+			star_speed+=0.3
+			if star_speed>=8 then
+				star_speed=8
+			end
+			ms_y1-=1.5
+			ms_y2-=1.5
+			off_1-=3
+			off_2-=3
+			music(-1,2000)
+		end	
+		if b+4*30<t then
+			
+			b=t
+			subphs=3
+		end
+	elseif subphs==3 then
+		if b+0.5*30<t then
+			mode=4
+			startcut1()
+			t=0
+			b=t
+		end	
+	end	
 end
  -- cutscene handoff
 function update_cut1()
+	starfield_update()
 	blinkt+=1
 	t+=1
-	if btn(4)==false and btn(5)==false then
-		btnreleased=true
+	if t>0 and t<2 then
+		b=t
 	end
-	if btnreleased then
-		if btnp(5) or btnp(4) then
-			startgame()
-			btnreleased=false
+	
+		if off_1>-60 then 
+			off_1-=2
+			off_2-=2
+		else
+			off_1-=1
+			off_2-=1
 		end
-	end
+		if off_1==-50 then
+			sfx(8)
+		end			
+		star_speed-=0.10
+		
+		if off_1<-260 then
+			startgame()
+		end
+		--[[
+		if btn(4)==false and btn(5)==false then
+			btnreleased=true
+		end
+		if btnreleased then
+			if btnp(5) or btnp(4) then
+				startgame()
+				btnreleased=false
+			end
+		end
+	]]--
 end
 
 -- game over
@@ -927,7 +1088,7 @@ function update_over()
 	end
 	if btnreleased then
 		if btnp(5) or btnp(4) then
-			state_switch("start")
+			startgame()
 			music(5)
 			btnreleased=false
 		end
@@ -956,6 +1117,7 @@ end
 function update_wavetxt()
 	update_game()
 	wavetime-=1
+	star_speed-=0.01
 	if wavetime<=0 then
 	
 		state_switch("game")
@@ -970,6 +1132,7 @@ end
 -->8
 -- draw functions
 function draw_game()
+	print(wavetime,50,50)
 	if flash>0 then
 		flash-=1
 		cls(1)
@@ -979,7 +1142,7 @@ function draw_game()
 	else	
 		cls(0)
 	end	
-	gamefield()
+	starfield_draw()
 	-- draw player ship
 	if invul<=0 then
 		drwmyspr(ship)	
@@ -1115,10 +1278,6 @@ function draw_game()
 		drwmyspr(myebul)
 		pal()
 	end	
-
-	--for myebul in all(muh_lazer) do
-	--	spr(myebul.spr,myebul.x,myebul.y,myebul.sprw,myebul.sprh)
- --end
 	
 	--floats
 	for myfl in all(floats) do
@@ -1137,21 +1296,19 @@ function draw_game()
 	--ui elements
 	
 	--ending taunt message
-	local kx=63
 	if delay<119 and score==0 then
-		print("you only",25,kx,11)
-		print("got zero?",58,kx,8)
-		print("how?!",55,kx+8,7)
+		print("you only",25,63,11)
+		print("got zero?",58,63,8)
+		print("how?!",55,63+8,7)
 	elseif delay<119 and score>=1 and score<99 then
-		print("you only got",25,kx,11)
-		print(score.."00",75,kx,8)
-		print("?!?!",91,kx,11)
+		print("you only got",25,63,11)
+		print(score.."00",75,63,8)
+		print("?!?!",91,63,11)
 	elseif delay<119 and score>=100 then
-		print("you got",25,kx,11)
-		print(score.."00",55,kx,8)
-		print("?!?!?!?!",75,kx,11)
+		print("you got",25,63,11)
+		print(score.."00",55,63,8)
+		print("?!?!?!?!",75,63,11)
 	end
-	
 	
 	--lcars ui for torpedoes
 	pal(12,8)
@@ -1207,12 +1364,6 @@ function draw_game()
 	dis_spr(score,4)
 	pal()
 	
-	
-	--viewscreen ui?
-	
-	--sprite to animate
-	--spr(faceanim,69,-1)
-	--print("we are borg!",78,1,8)
 	print(debug,0,9,7)
 	
 end
@@ -1227,20 +1378,19 @@ end
 function draw_start()
 	blinkt+=1
 	cls(0)
-	warps()
-	cprint(version,64,120,1)
-	spr(231,60,75,2,2)
-	spr(18,53,82)
-	--sspr(16,8,5,6,48,48,32,32) promo shots
-	cprint("star trek:",64,25,8)
-	cprint("collective mischief",64,33,11)
+	starfield_draw()
+	cprint(version,64,120+off_1,1)
+	spr(231,60,ms_y1,2,2)
+	spr(18,53,ms_y2)
 	
+	cprint("star trek:",64,25+off_1,8)
+	cprint("collective mischief",64,33+off_2,11)
 	--print("time to go assimilating!",17,80,8)
-	
 end		
 function draw_over()
 	cls(0)
-	star_cut1()
+	starfield_draw()
+	mode=1
 	cprint("score:"..makescore(score),45,2,7)
 	if score>hiscore then
 		cprint("new highscore!",55,10,blink())
@@ -1261,22 +1411,18 @@ end
 function draw_cut1()
 	
 	cls(0)
-	star_cut1()
 	
-	spr(64,20,17,2,2)
-	spr(64,80,20,2,2)
-	spr(50,23,77)
-	spr(50,60,30)
-	spr(50,90,80)
-	spr(70,75,8)
-	spr(70,65,15)
-	spr(70,45,9)
-
+	starfield_draw()
+	
+	--[[
 	cprint("these borg drones",64,50,11)
 	cprint("are gonna     for",64,60,11)
 	cprint("pay",76,60,8)
 	cprint("shootin' up my ride!",64,70,11)
 	cprint("press x to save earth",64,100,blink())
+	]]--
+	spr(64,40,160+off_1,2,2)
+	spr(64,10,140+off_2,2,2)
 end
 
 function draw_win()
@@ -1309,15 +1455,13 @@ end
 --waves and enemies
 
 function spawnwave1()
-
-if wave<lastwave then
-	sfx(28)
-else
-	music(10)
-end		
-
-t+=1
-	if wave==1 then
+	t+=1
+	if wave<lastwave then
+		sfx(28)
+	else
+		music(10)
+	end
+	if wave==1 and wavetime<=0 then
 	--opening wave
 	atkfreq=50
 	firefreq=20
@@ -1337,7 +1481,7 @@ t+=1
 		{0,0,0,0,2,0,0,0,0,0},
 		{0,1,1,1,1,1,1,1,1,0},
 		{0,1,1,1,1,1,1,1,1,0},
-		{1,2,1,2,1,2,1,2,1,2}
+		{1,1,1,2,1,1,1,2,1,2}
 	})
 	end
 	if wave==3 and wavetime<=0 then
@@ -1345,10 +1489,10 @@ t+=1
 	atkfreq=45
 	firefreq=20
 	placeens({
-		{3,1,2,3,3,3,3,2,1,3},
-		{2,1,2,2,2,2,1,2,1,2},
-		{2,1,2,1,1,1,1,2,1,2},
-		{0,0,0,1,2,2,1,0,0,0}
+		{3,1,2,1,1,3,1,2,1,3},
+		{1,1,2,2,2,2,1,2,1,2},
+		{1,1,1,1,1,1,1,2,1,1},
+		{0,0,0,1,2,1,1,0,0,0}
 	})
 	end
 	if wave==4 and wavetime<=0 then
@@ -1357,7 +1501,7 @@ t+=1
 	firefreq=20
 	placeens({
 		{3,3,4,3,3,3,3,4,3,3},
-		{1,1,4,1,1,1,1,4,1,1},
+		{1,1,1,1,1,1,1,1,1,1},
 		{1,1,1,1,1,1,1,1,1,1},
 		{2,2,0,2,2,2,2,2,0,2}
 	})		
@@ -1368,9 +1512,9 @@ t+=1
 	firefreq=20
 	placeens({
 		{4,4,4,4,5,0,4,4,4,4},
-		{0,4,4,4,0,0,0,4,4,4},
-		{0,0,4,4,4,0,0,0,4,4},
-		{0,0,0,4,0,0,0,0,0,4}
+		{0,4,4,4,0,0,1,4,4,4},
+		{0,0,4,4,4,0,1,1,4,4},
+		{0,0,0,1,0,0,1,0,0,4}
 	})
 	end
 	-- assim fed ships are angry
@@ -1448,6 +1592,7 @@ function nextwave()
 		if wave==1 then
 			music(-1,1000)
 			music(22)
+			
 		else
 			music(0)
 		end
@@ -1459,8 +1604,8 @@ end
 
 function spawnen(entype,enx,eny,enwait)
 	local myen=makespr()
-		myen.x=enx*rnd(1.5)
-		myen.y=eny-25+rnd(25)
+		myen.x=enx*rnd(3)
+		myen.y=eny-50
 		myen.mission="flyin"
 		myen.posx=enx
 		myen.posy=eny
@@ -1468,11 +1613,10 @@ function spawnen(entype,enx,eny,enwait)
 		
 		myen.wait=enwait
 		myen.type=entype
-
 	if entype==nil or entype==1 then
 		--borg probe
 		myen.spr=68
-		myen.hp=2.5
+		myen.hp=2.51
 		myen.ani={68,69,70,71}
 		myen.colw=5
 		myen.colh=6
@@ -1480,7 +1624,7 @@ function spawnen(entype,enx,eny,enwait)
 	elseif entype==2 then
 		-- sphere
 		myen.spr=84
-		myen.hp=6
+		myen.hp=7
 		myen.ani={84,85,86,87}
 		myen.colw=8
 		myen.colh=8
@@ -1488,7 +1632,7 @@ function spawnen(entype,enx,eny,enwait)
 	elseif entype==3 then
 		-- med borg cube
 		myen.spr=50
-		myen.hp=11
+		myen.hp=13
 		myen.ani={50,51,52,53}
 		myen.colw=8
 		myen.colh=8
@@ -1534,7 +1678,7 @@ function spawnen(entype,enx,eny,enwait)
 		myen.sprh=4
 		myen.colw=32
 		myen.colh=32 
-		myen.boss=true			
+		myen.boss=true
 	end
 	add(enemies,myen)
 end
@@ -1598,7 +1742,7 @@ function doenemy(myen)
 			if t%25==0 then
 				fireshotmod(myen,3,1.25,time()/16)
 			end
-			-- tweaking location
+			-- tweaking location--
 			if myen.x<32 then
 				myen.sx+=1-(myen.x/32)
 			end
@@ -1681,7 +1825,7 @@ function doenemy(myen)
 end
 
 function picktimer()
-	if mode!="game" then
+	if mode1!="game" then
 		return
 	end	
 	
@@ -1803,8 +1947,6 @@ function drop_pickup2(pix,piy)
 	mypick.spr=204
 	add(pickups2,mypick)
 end
-
-
 
 function plogic(mypick)
 	
@@ -1937,28 +2079,7 @@ function applydam(myen,mybul,kind)
 	return myen
 	
 end
---[[
-function fire_muh_lazer(myen)
-	local newbul=makespr()
-	sfx(37)
-		if t%5==0 then
-			newbul.colh+=6
-		end
 
-	newbul.x=myen.x+9
-	newbul.y=myen.y+20
-	newbul.spr=140
-	newbul.aniframe=133
-	newbul.anispd=0.33
-	newbul.ani={140,141,142,143}
-	newbul.colw=8
-	newbul.colh=8
-	newbul.sprw=1
-	newbul.sprh=1
-	newbul.sy=1
-	add(muh_lazer,newbul)
-end
-]]--
 function cherbomb()
 	local spc=0.25/(cher*2)
 	flash=3
@@ -2254,14 +2375,14 @@ b3665b533355b3333333b5555556553b3366535bbb55b3333333b555555655b3bb665b5bbb553333
 5844448507dd000058d44d8507dd000d584404850000000000000000000000000000000000000000000000000017cd0006cccc60878808800000000000000000
 58888a85d0777dd758888a8577777dd758884a8500000000000000000000000000000000000000000000000000711d0006111160888808800000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dd00000666600088088000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dddd000000000000000000000000000000000000
-07dddd7d6d4444d6d000d7dd6d0440d6777dd7dd0000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
-0007d7dd64044046dddd77dd64dddd46d007ddd70000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
-0dd00d7764dddd467007dd0064400446ddd007700000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
-07dddd7d58400485dd0777dd584444857777dddd0000000000000000000000000000000000000000000000008dd8000000000000000000000000000000000000
+07dddd7d6d4444d6d000d7dd6d0440d6777dd7dd000000000000000000000000000000000000000000000000cddc000000000000000000000000000000000000
+0007d7dd64044046dddd77dd64dddd46d007ddd7000000000000000000000000000000000000000000000000cddc000000000000000000000000000000000000
+0dd00d7764dddd467007dd0064400446ddd00770000000000000000000000000000000000000000000000000cddc000000000000000000000000000000000000
+07dddd7d58400485dd0777dd584444857777dddd000000000000000000000000000000000000000000000000cddc000000000000000000000000000000000000
 0000000058844a850000000058888a8500000000000000000000000000000000000000000000000000000000dddd000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000000000000000
 00000000000000000000000000000000000000000000006600000000000000666600000000000000660000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000056650000000000005666650000000000005665000000000000000000000000000000000000000000000
 bb055550bb055550bb055550bb055550bb0555500000665566000000000066566566000000000066556600000000000000000000000000000000000000000000
@@ -2418,12 +2539,12 @@ __sfx__
 080d00001b0001b0001b0001b0301b0001b0201d0201e030200302004020040200001b7001b700227001b7001b7001d7001b7001b7001b7001d700227001a7001b7001b700167001b7001b7001b7001c7001c700
 050d00001f5001f000215001f5301f0001f5202152022530245302453024530245002070022700227001670000000000000000000000000000000000000000000000000000000000000000000000000000000000
 010d00002200022000220002203022000220302403025030270302703027030270001e00020000200002000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00060000010401603019030160301904001040160401904016040190501b0511b0511b051290001d000170002600001050160501905016050190500105016050190501b0611b0611b0501b0501b0401b0301b025
+770c00000c7300a73006730017300173001730017300173006730087300b730007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700
 00060000205401d540205401d540205401d540205401d54022540225502255022550225500000000000000000000025534225302553022530255301d530255302253019531275322753027530275322753027530
 000600001972020720227201b730207301973020740227401b74020740227402274022740000000000000000000001672020720257201b730257301973025740227401b740277402274027740277402774027740
 010c0000290502c0002a00029055290552a000270502900024000290002705024000240002400027050240002a05024000240002a0552a055240002905024000240002400029050240002a000290002405026200
 510c00001431519315203251432519315203151432519325203151431519325203251431519315203251432519315203151432519325203151431519325203251431519315203251432519315203151432518325
-010c00000175001750017500175001750017500175001750017500175001750017500175001750017500175001750017500175001750017500175001750017500175001750017500175001750017500175001750
+760c00000173001730017300173001730017300173001730017300173001730017300173001730017300173001730017300173001730017300173001730017300173001730017300173001730017300173001730
 010c0000195502c5002a50019555195552a500185502950024500295001855024500245002450018550245001b55024500245001b5551b555245001955024500245002450019550245002a500295001855026500
 010c0000290502c0002a00029055290552a000270502900024000290002000024000240352504527050240002a050240002f0052d0552c0552400029050240002400024000240002400024030250422905026200
 010c0000195502c5002a50019555195552a500185502950024500295002050024500145351654518550245001b550245002f5051e5551d5552450019550245002450024500245002450014530165401955026500
@@ -2467,9 +2588,16 @@ c11100000f5530f5000f5530a5000f55212500125000f5530f5000f5531f5000f5520d5520d5000d
 5c0400000817120161181610f17108171171711017109171071710d1610f161091510715106151051410514105132041320313202132021320113201132001320113201132011320112200122001220012200122
 002100001a5401f54023540215401d54028540265402654026540265402654026540265402654023540285402c5402a540285402d5402f5402f5402f5402f5400050000500005000050000500005000050000500
 002100001a7401f74023740217401d74028740267402674026740267402674026740267402674023740287402c7402a740287402d7402f7402f7402f7402f7400070000700007000070000700007000070000700
+0124000000000000000000000000000000000000000000001f0301f0301f0301f0302603026030260302603029030280302803028030280302303023030230302303000000000000000000000000000000000000
+012400000202007020020200702002020070200202007020020200702002020070200202007020020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+012400000000000000000000000000000000000000000000000001f0401f0401f0401f040260402604026040260402b040290402b0402b0402b0402b0402b0402b0402b040000000000000000000000000000000
+012400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001504000000000000000000000000000000000000
+012400000204007040020400704002040070400204007040020400704002040070400204007040020400000000000000000000000000000000000007040000000000000000000000000000000000000704002040
+00241a00000000000000000000000000000000000000000000000000001f0601f0601f0601f06026060260602606026060290602b0602b0602b0602b0602b0602b0602b060014000140001400014000140001400
+00240e000706002060070600206007060020600706002060070600206007060020600706002060014000140001400014000140001400014000140001400014000140001400014000140001400014000140001400
 __music__
 04 05060744
-04 08090a44
+04 48494a44
 01 0b0c0d0e
 00 0f0c0d10
 02 11121318
@@ -2491,4 +2619,7 @@ __music__
 00 20243244
 02 1e1d3444
 04 62643837
+01 40396c3a
+00 403b3c3d
+02 403e3f3f
 
