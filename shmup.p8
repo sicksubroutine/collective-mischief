@@ -3,14 +3,14 @@ version 37
 __lua__
 --"star trek:collective mischief"
 --by chaz(🐱)
---version 0.7.10
+--version 0.7.12
 --tng music/starfield by phlox
 --some music/sfx by gruber
 --shmup tutorial by lazy devs
 --playtesting by cat
 
 function _init()
-	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.7.10"
+	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.7.12"
 	cartdata("star_trek_shmup")
 	--starfield test
 	star_modes={"slow","normal","fast","gold"}
@@ -23,6 +23,7 @@ function _init()
 	end
 	--menu_init()
 	startscreen()
+	music(26)
 end
 
 function state_switch(state)
@@ -49,9 +50,9 @@ function startgame()
 	nextwave()
 	ship=makespr()
 	if menu_pos==2 then
-		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded=63,90,1,1,6,5,false
+		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,c=63,90,1,1,6,5,false,0
 	else
-		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,ship.sprh,ship.sprw=63,90,1,1,15,6,false,2,2
+		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,ship.sprh,ship.sprw,c=63,90,1,1,5,5,false,2,2,15
 	end
 	--starting game conditions
 	shields,cher,firefreq=5,1,20
@@ -125,14 +126,18 @@ function blink()
 	return blanim[blinkt]
 end
 
-function col(a,b)
+function col(a,b,d)
 	if a.ghost or b.ghost then
 		return false
 	end	
+	
+	if d==nil then
+		d=0
+	end
 
  local a_left,a_top,a_right,a_bottom=a.x,a.y,a.x+a.colw-1,a.y+a.colh-1
  
- local b_left,b_top,b_right,b_bottom=b.x,b.y,b.x+b.colw-1,b.y+b.colh-1
+ local b_left,b_top,b_right,b_bottom=b.x,b.y,b.x+b.colw-1,b.y+b.colh-1+d
  
  if a_top >b_bottom then return false end
  if b_top >a_bottom then return false end
@@ -195,10 +200,7 @@ function bigexplode(expx,expy)
 	--sparks
 	for i=1,5 do
 		local myp={}
-		myp.x=expx+4
-		myp.y=expy+4
-		myp.sx=rnd()*25-0.25--partspd
-		myp.sy=rnd()*25-0.25--partspd
+		myp.x,myp.y,myp.sx,myp.sy=expx+4,expy+4,rnd()*25-0.25,rnd()*25-0.25
 		myp.age=3
 		myp.maxage=20+rnd(20)
 		myp.size=1
@@ -528,10 +530,10 @@ function update_game()
 	ship.sx,ship.sy,muzzle,muzzle2=0,0,0,0
 	
 	if menu_pos==2 then
-		ship.spr,shipsd=18,1.6
+		ship.spr,shipsd=18,1.7
 		pulse_p,q_tor=2.5,25
 	else
-		ship.spr,shipsd=45,0.8
+		ship.spr,shipsd=45,1
 		pulse_p,q_tor=3.25,30
 	end	
 	--left
@@ -606,7 +608,9 @@ function update_game()
 		ship.x=0
 	end
 	-- bottom
-	if ship.y>118-ship.colh then
+	if menu_pos==1 and ship.y>118-16 then
+		ship.y=118-16
+	elseif menu_pos==2 and ship.y>118-ship.colh then
 		ship.y=118-ship.colh
 	end
 	-- top
@@ -641,7 +645,7 @@ function update_game()
 		move(myebul)
 		animate(myebul)
 
-		if myebul.y>128 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
+		if myebul.y>120 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
 			del(ebuls,myebul)
 		end
 		myebul.age+=1
@@ -770,14 +774,14 @@ function update_game()
 	-- collision pickups x ships
 	-- torpedo spread
 	for mypick in all(pickups) do
-		if col(mypick,ship) and ship.ded!=true then
+		if col(mypick,ship,c) and ship.ded!=true then
 			del(pickups,mypick)
 			plogic(mypick)
 		end	
 	end
 	-- shield recharge
 	for mypick in all(pickups2) do
-		if col(mypick,ship) and ship.ded!=true then
+		if col(mypick,ship,c) and ship.ded!=true then
 			del(pickups2,mypick)
 			plogic2(mypick)
 		end	
@@ -939,7 +943,7 @@ function update_over()
 	if btnreleased then
 		if btnp(5) or btnp(4) then
 			startgame()
-			music(5)
+			
 			wave=wave_rec
 			btnreleased=false
 		end
@@ -969,6 +973,7 @@ function update_wavetxt()
 	update_game()
 	wavetime-=1
 	star_speed-=0.01
+	btimer,btimer2=1000,1000
 	if wavetime<=0 then
 	
 		state_switch("game")
@@ -977,6 +982,7 @@ function update_wavetxt()
 		btimer2=0
 		
 		spawnwave1()
+		music(26)
 	end	
 	
 	if ship.y<57 then
@@ -1019,7 +1025,11 @@ function update_menu()
 		torout+=1
 	end
 	if torout>50 then
-		music(5)
+		if menu_pos==1 then 
+			music(5)
+		else 
+			music(25) 
+		end
 		state_switch("start")
 		subphs=2
 		t=0
@@ -1210,7 +1220,7 @@ function draw_game()
 	
 	if delay<119 then
 		print("your score is only",15,63,11)
-		print(score.."00",89,63,8)
+		print(score.."00!",89,63,8)
 		
 	end
 	
@@ -1358,7 +1368,7 @@ function draw_wavetxt()
 	spr(111,82,49)
 	pal()
 	if wave==lastwave then
-		cprint("Oh no!",64,50,blink())
+		cprint("oh no!",64,50,blink())
 	else 
 		cprint("wave "..wave.. " of "..lastwave,64,50,blink())
 	end
@@ -1377,6 +1387,7 @@ end
 cprint("select your ship:",62,18,7)
 
 cprint("uss enterprise",62,27,12)
+cprint("ncc-1701-e",62,33,7)
 spr(45,57,40,2,2)
 print("def:",29,60,8)
 print("5",45,60,7)
@@ -1386,6 +1397,7 @@ print("off:",72,60,8)
 print("5",88,60,7)
 
 cprint("uss defiant",62,70,12)
+cprint("nx-74205",62,76,7)
 spr(18,59,85)
 print("def:",29,100,8)
 print("3",45,100,7)
@@ -1547,9 +1559,7 @@ function spawnen(entype,enx,eny,enwait)
 		myen.wait,myen.type=enwait,entype
 	if entype==nil or entype==1 then
 		--borg probe
-		myen.spr=68
-		myen.hp=2.51
-		myen.ani={68,69,70,71}
+		myen.spr,myen.hp,myen.ani=68,2.51,{68,69,70,71}
 		myen.colw=5
 		myen.colh=6
 		myen.score=1
@@ -1598,7 +1608,7 @@ function spawnen(entype,enx,eny,enwait)
 		myen.posx=48
 		myen.posy=25
 		myen.spr=128
-		myen.hp=150
+		myen.hp=300
 		myen.ani={128,132}
 		myen.sprw=4
 		myen.sprh=4
@@ -2464,12 +2474,12 @@ c11100000f5530f5000f5530a5000f55212500125000f5530f5000f5531f5000f5520d5520d5000d
 002100001a5401f54023540215401d54028540265402654026540265402654026540265402654023540285402c5402a540285402d5402f5402f5402f5402f5400050000500005000050000500005000050000500
 002100001a7401f74023740217401d74028740267402674026740267402674026740267402674023740287402c7402a740287402d7402f7402f7402f7402f7400070000700007000070000700007000070000700
 0124000000000000000000000000000000000000000000001f0301f0301f0301f0302603026030260302603029030280302803028030280302303023030230302303000000000000000000000000000000000000
-012400000202007020020200702002020070200202007020020200702002020070200202007020020200000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-012400000000000000000000000000000000000000000000000001f0401f0401f0401f040260402604026040260402b040290402b0402b0402b0402b0402b0402b0402b040000000000000000000000000000000
-012400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001504000000000000000000000000000000000000
-012400000204007040020400704002040070400204007040020400704002040070400204007040020400000000000000000000000000000000000007040000000000000000000000000000000000000704002040
-00241a00000000000000000000000000000000000000000000000000001f0601f0601f0601f06026060260602606026060290602b0602b0602b0602b0602b0602b0602b060014000140001400014000140001400
-00240e000706002060070600206007060020600706002060070600206007060020600706002060014000140001400014000140001400014000140001400014000140001400014000140001400014000140001400
+012400000202007020020200702007020020200702002020070200202007020020200702002020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00160000000001a060000001806000000210602106021060000001f0601f0601f0601f0601f0601f0601f060000001a0601a0601f0601f06023060230601a0601a0601a0601a0601a06000000000000000000000
+001600000000013060000001f060000001a0601a0601a060000002606026060260602606026060260602606000000130601306015060150601806018060210602106021060210602106000000000000000000000
+000700000202002020020200000002020020200202002020020200000000000000000202002020020200202002020000000000000000020200202002020000000302003020030200000000020000200002000000
+000700000202002020020200000002020020200202002020020200000000000000000202002020020200202002020000000000000000020200202002020020200202000000000000000002020020200202000000
+000700000002000020000200000000020000200002000020000200000000000000000002000020000200002000020000000000000000000200002000020000000102001020010200000003020030200302000000
 __music__
 04 05060744
 04 48494a44
@@ -2494,7 +2504,11 @@ __music__
 00 20243244
 02 1e1d3444
 04 62643837
-01 40396c3a
-00 403b3c3d
-02 407e7f7f
+05 40396c3a
+00 407b7c7d
+01 3b3c4b4c
+01 3d414243
+00 3e414243
+00 3d414243
+02 3f414243
 
