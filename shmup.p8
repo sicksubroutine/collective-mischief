@@ -645,7 +645,7 @@ function update_game()
 		move(myebul)
 		animate(myebul)
 
-		if myebul.y>120 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
+		if myebul.y>118 or myebul.y<-8 or myebul.x<-8 or myebul.x>128 then
 			del(ebuls,myebul)
 		end
 		myebul.age+=1
