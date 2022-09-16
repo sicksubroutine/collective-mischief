@@ -1,5 +1,4 @@
-# VG-Shmup
-
+# ![collective-mischief_title](https://user-images.githubusercontent.com/14047518/190794353-c14d5a17-c882-464a-a9e1-84483f57252b.png)
 
 ### ![controls](https://user-images.githubusercontent.com/14047518/190782335-15888adb-0a93-4829-a3f8-9f8a95dae70f.png)
 
