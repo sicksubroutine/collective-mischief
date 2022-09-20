@@ -3,14 +3,17 @@ version 37
 __lua__
 --"star trek:collective mischief"
 --by chaz(🐱)
---version 0.7.12
---tng music/starfield by phlox
+--version 0.8.0
+--playtesting by cat,aktane,otto,dw817
+--tng music/starfield by felixdr
 --some music/sfx by gruber
+--boss music by  sebastian habler
 --shmup tutorial by lazy devs
---playtesting by cat
+--thank you krystian!
+
 
 function _init()
-	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.7.12"
+	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.8.0"
 	cartdata("star_trek_shmup")
 	--starfield test
 	star_modes={"slow","normal","fast","gold"}
@@ -46,13 +49,13 @@ end
 
 function startgame()
 	state_switch("wavetxt")
-	wave,t,lastwave,btimer,btimer2,star_speed=0,0,9,1000,1000,10
+	wave,t,lastwave,btimer,btimer2,star_speed,shake=0,0,9,1000,1000,10,0
 	nextwave()
 	ship=makespr()
 	if menu_pos==2 then
 		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,c=63,90,1,1,6,5,false,0
 	else
-		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,ship.sprh,ship.sprw,c=63,90,1,1,5,5,false,2,2,15
+		ship.x,ship.y,ship.sx,ship.sy,ship.colh,ship.colw,ship.ded,ship.sprh,ship.sprw,c=63,90,1,1,7,5,false,2,2,15
 	end
 	--starting game conditions
 	shields,cher,firefreq=5,1,20
@@ -84,7 +87,7 @@ end
 function menu_init()
 	
 	state_switch("menu")
-	subphs,menu_pos,delay,torout=1,1,0,0
+	subphs,menu_pos,delay,torout=1,2,0,0
 end
 
 -->8
@@ -519,6 +522,16 @@ function starfield_draw()
   
  end
 end
+
+function score_check()
+	if score>hiscore then
+		dset(0,score)
+	end
+	if kills>hikills then	
+		dset(1,kills)
+	end
+end
+
 -->8
 -- update functions
 function update_game()
@@ -530,7 +543,7 @@ function update_game()
 	ship.sx,ship.sy,muzzle,muzzle2=0,0,0,0
 	
 	if menu_pos==2 then
-		ship.spr,shipsd=18,1.7
+		ship.spr,shipsd=18,1.5
 		pulse_p,q_tor=2.5,25
 	else
 		ship.spr,shipsd=45,1
@@ -792,12 +805,7 @@ function update_game()
 		invul=10000
 		delay-=1
 		ship.ded=true
-		if score>hiscore then
-			dset(0,score)
-		end
-		if kills>hikills then	
-			dset(1,kills)
-		end
+	score_check()
 		wave_rec=wave	
 	end
 	if shields<=0 and ship.ded and delay>118.5 then
@@ -953,17 +961,16 @@ end
 function update_win()
 	blinkt+=1
 	t+=1
-	lockout=t+30
 	if t<lockout then
 		return
 	end
 
-	if btn(4)==false and btn(5)==false then
+	if btn(❎)==false and btn(🅾️)==false then
 		btnreleased=true
 	end
 	if btnreleased then
-		if btnp(5) or btnp(4) then
-			startscreen()
+		if btnp(❎) or btnp(🅾️) then
+			startgame()
 			btnreleased=false
 		end
 	end
@@ -982,7 +989,6 @@ function update_wavetxt()
 		btimer2=0
 		
 		spawnwave1()
-		music(26)
 	end	
 	
 	if ship.y<57 then
@@ -998,11 +1004,10 @@ function update_menu()
 	
 	t+=1
 	
-	
 	if menu_pos==1 then
-		rx,ry,lrx,lry=25,25,95,67
-	elseif menu_pos==2 then
 		rx,ry,lrx,lry=25,68,95,107
+	elseif menu_pos==2 then
+		rx,ry,lrx,lry=25,25,95,67
 	end
 	delay-=1
 	if btnp(⬆️) and delay<0 then
@@ -1341,18 +1346,23 @@ function draw_cut1()
 	cprint("these borg drones",64,50,11)
 	cprint("are gonna pay for",64,60,11)
 	cprint("shootin' up my ride!",64,70,11)
-	cprint("press x to save earth",64,100,blink())
 	]]--
+	
 	spr(64,40,160+off_1,2,2)
 	spr(64,10,140+off_2,2,2)
 end
 
 function draw_win()
 	cls(0)
-	draw_game()
-
-	cprint("you saved earth!",64,20,8)
-	cprint("good job!",64,30,8)
+	if b+2*30>t then
+		draw_game()
+	else
+		starfield_draw()
+		cprint("you saved earth!",64,20,8)
+		cprint("good job!",64,30,8)
+		cprint("score:"..makescore(score),64,40,7)
+		cprint("hiscore:"..makescore(hiscore),64,50,blink())
+	end	
 
 end
 
@@ -1386,25 +1396,25 @@ if torout>26 then
 end
 cprint("select your ship:",62,18,7)
 
-cprint("uss enterprise",62,27,12)
-cprint("ncc-1701-e",62,33,7)
-spr(45,57,40,2,2)
-print("def:",29,60,8)
-print("5",45,60,7)
-print("spd:",51,60,8)
-print("2",67,60,7)
-print("off:",72,60,8)
-print("5",88,60,7)
-
-cprint("uss defiant",62,70,12)
-cprint("nx-74205",62,76,7)
-spr(18,59,85)
+cprint("uss enterprise",62,70,12)
+cprint("ncc-1701-e",62,76,7)
+spr(45,57,83,2,2)
 print("def:",29,100,8)
-print("3",45,100,7)
+print("5",45,100,7)
 print("spd:",51,100,8)
-print("5",67,100,7)
+print("2",67,100,7)
 print("off:",72,100,8)
-print("4",88,100,7)
+print("5",88,100,7)
+
+cprint("uss defiant",62,27,12)
+cprint("nx-74205",62,33,7)
+spr(18,59,45)
+print("def:",29,60,8)
+print("3",45,60,7)
+print("spd:",51,60,8)
+print("5",67,60,7)
+print("off:",72,60,8)
+print("4",88,60,7)
 end
 -->8
 --waves and enemies
@@ -1499,7 +1509,7 @@ function spawnwave1()
 	placeens({
 		{6,0,0,0,6,0,0,0,6,0},
 		{0,0,0,0,0,0,0,0,0,0},
-		{0,0,0,0,0,0,0,0,0,0},
+		{0,0,6,0,0,0,6,0,0,0},
 		{0,0,0,0,0,0,0,0,0,0}
 	})
 	end
@@ -1530,8 +1540,9 @@ function nextwave()
 	wave+=1
 	ebuls={}
 	if wave>lastwave and ship.ded!=true then
+		b,lockout=t,t+3*30
+		score_check()
 		state_switch("win")
-		lockout=t+50
 		music(2)
 		if score>hiscore then
 			dset(0,score)
@@ -1559,62 +1570,24 @@ function spawnen(entype,enx,eny,enwait)
 		myen.wait,myen.type=enwait,entype
 	if entype==nil or entype==1 then
 		--borg probe
-		myen.spr,myen.hp,myen.ani=68,2.51,{68,69,70,71}
-		myen.colw=5
-		myen.colh=6
-		myen.score=1
+		myen.spr,myen.hp,myen.ani,myen.colw,myen.colh,myen.score=68,2.51,{68,69,70,71},5,6,1
 	elseif entype==2 then
 		-- sphere
-		myen.spr=84
-		myen.hp=7
-		myen.ani={84,85,86,87}
-		myen.colw=8
-		myen.colh=8
-		myen.score=3
+		myen.spr,myen.hp,myen.ani,myen.colw,myen.colh,myen.score=84,7,{84,85,86,87},8,8,3
 	elseif entype==3 then
 		-- med borg cube
-		myen.spr=50
-		myen.hp=13
-		myen.ani={50,51,52,53}
-		myen.colw=8
-		myen.colh=8
-		myen.score=6
+		myen.spr,myen.hp,myen.ani,myen.colw,myen.colh,myen.score=50,13,{50,51,52,53},8,8,6
 	elseif entype==4 then
 		-- pyramid, not used
 	elseif entype==5 then
 		-- mini boss-assimilated fed
-		myen.spr=70
-		myen.hp=25
-		myen.ani={72,74,76}
-		myen.sprw=2
-		myen.sprh=2
-		myen.colw=8
-		myen.colh=15
-		myen.score=10
+		myen.spr,myen.hp,myen.ani,myen.sprw,myen.sprh,myen.colw,myen.colh,myen.score=70,25,{72,74,76},2,2,8,15,10
 	elseif entype==6 then
 		-- large cube -- second mini boss
-		myen.spr=64
-		myen.hp=48
-		myen.ani={64,66,96}
-		myen.sprw=2
-		myen.sprh=2
-		myen.colw=14
-		myen.colh=14
-		myen.score=15
+		myen.spr,myen.hp,myen.ani,myen.sprw,myen.sprh,myen.colw,myen.colh,myen.score=64,48,{64,66,96},2,2,14,14,15
 	elseif entype==7 then
 		-- invader sphere - doesn't exist.
-		myen.x=48
-		myen.y=-24
-		myen.posx=48
-		myen.posy=25
-		myen.spr=128
-		myen.hp=300
-		myen.ani={128,132}
-		myen.sprw=4
-		myen.sprh=4
-		myen.colw=32
-		myen.colh=32 
-		myen.boss=true
+		myen.x,myen.y,myen.posx,myen.posy,myen.spr,myen.hp,myen.ani,myen.sprw,myen.sprh,myen.colw,myen.colh,myen.boss=48,-24,48,25,128,250,{128,132},4,4,32,32,true
 	end
 	add(enemies,myen)
 end
@@ -1631,26 +1604,19 @@ function doenemy(myen)
 		--flying in
 		--easing function
 		myen.ghost=true
-		local dx=(myen.posx-myen.x)/12
-		local dy=(myen.posy-myen.y)/12
+		local dx,dy=(myen.posx-myen.x)/12,(myen.posy-myen.y)/12
 		if myen.boss then
-			dx=min(dx,1)
-			dy=min(dy,1)
+			dx,dy=min(dx,1),min(dy,1)
 		end
 			myen.x+=dx
 			myen.y+=dy
-		
 		if abs(myen.posy-myen.y)<1 then
-			myen.y=myen.posy
-			myen.x=myen.posx
+			myen.y,myen.x=myen.posy,myen.posx
 			if myen.boss then
 				sfx(53)
-				myen.shake,myen.wait,myen.mission=20,25,"boss1"
-				myen.phbegin=t
-				myen.ghost=false
+				myen.shake,myen.wait,myen.mission,myen.phbegin,myen.ghost=20,25,"boss1",t,false
 			else
-				myen.mission="protec"
-				myen.ghost=false
+				myen.mission,myen.ghost="protec",false
 			end
 		end
 	--wait for collective	
@@ -1681,12 +1647,9 @@ function doenemy(myen)
 		elseif myen.type==2 then
 			local	tar1x,tar1y,tar2x,tar2y=ship.x+4,ship.y+4,myen.x,myen.y
 			if ship.y-myen.y<5 then 
-				myen.sx=0
-				myen.sy=2 
+				myen.sx,myen.sy=0,2
 			else
-				angle=atan2(tar1y-tar2y,tar1x-tar2x)
-				myen.sx=sin(angle)-0.10
-				myen.sy=cos(angle)+0.25
+				angle,myen.sx,myen.sy=atan2(tar1y-tar2y,tar1x-tar2x),sin(angle)-0.10,cos(angle)+0.25
 			end
 			if t%30==0 then
 					fireshotgun(myen,5,1.5,0.10)
@@ -1751,8 +1714,7 @@ function picktimer()
 end
 
 function pickattack()
-	local maxnum=min(10,#enemies)
-	local myindex=flr(rnd(maxnum))
+	local maxnum,myindex=min(10,#enemies),flr(rnd(maxnum))
 	
 	myindex=#enemies-myindex
 	local myen=enemies[myindex]
@@ -2183,13 +2145,13 @@ __gfx__
 0a0a00000060000000600000060000000000000007677c707c6776c707c7767000000000878808800cccccc00000000000000000000000000000000000000000
 000000000000000000000000000000000000000006066060600660060606606000000000888808800ccccc100000000000000000000000000000000000000000
 00000000000000000000000000000000000000000c0000c0c000000c000000000000000008808800000000000000000000000000000000000000000000000000
-00000000000000001c1c10000000000000010000000100000001000000010000000d770000666600000000000016000000000000006666000000000000610000
-0000000000000000c000c10000000000010c010000c1c000000c00000017100000dcd70006cccc60000000000516500000000000056666500000000005615000
-0000000000000000c000c1000000000000171000001710000017100000c7c00000dcc77006111160000000001155660000000000665665660000000066551100
-000760000000000010001100000000001c777c101c777c101c777c101c777c100d1c7c7006cccc60000000001116660000000000666776660000000066611100
-0085580000000000c000c1000000000000171000001710000017100000c7c0000d1c7cd006111160000000001155660000000000665665660000000066551100
-0076670000000000c000c00000000000010c010001c1c100000c0000001710000017cd0006cccc60000000000288700000000000058888500000000007882000
-00c88c00000000001c1c1000000000000001000000010000000100000001000000711d0006111160000000000016000000000000006666000000000000610000
+00000000000000001c1c1000000000000001000000010000000c000000070000000d770000666600000000000016000000000000006666000000000000610000
+0000000000000000c000c10000000000010c0100007c700001070100071c170000dcd70006cccc60000000000516500000000000056666500000000005615000
+0000000000000000c000c100000000000017100007c1c70000c7c00000c1c00000dcc77006111160000000001155660000000000665665660000000066551100
+000760000000000010001100000000001c777c107c111c70c77777c07c111c700d1c7c7006cccc60000000001116660000000000666776660000000066611100
+0085580000000000c000c100000000000017100007c1c70000c7c00000c1c0000d1c7cd006111160000000001155660000000000665665660000000066551100
+0076670000000000c000c00000000000010c0100007c700001070100071c17000017cd0006cccc60000000000288700000000000058888500000000007882000
+00c88c00000000001c1c1000000000000001000000010000000c00000007000000711d0006111160000000000016000000000000006666000000000000610000
 0000000000000000000000000000000000000000000000000000000000000000000dd00000666600000000000016000000000000000550000000000000610000
 00566500009000005655b6555655665556556b555655665500000000a000790967c0990000566500000000002016080000000000800660080000000080610200
 0067760000700000b655665566556655b655665566556655000000007a9a979a5600009000677608000000001116c600000000006c6776c6000000006c611100
@@ -2477,9 +2439,9 @@ c11100000f5530f5000f5530a5000f55212500125000f5530f5000f5531f5000f5520d5520d5000d
 012400000202007020020200702007020020200702002020070200202007020020200702002020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00160000000001a060000001806000000210602106021060000001f0601f0601f0601f0601f0601f0601f060000001a0601a0601f0601f06023060230601a0601a0601a0601a0601a06000000000000000000000
 001600000000013060000001f060000001a0601a0601a060000002606026060260602606026060260602606000000130601306015060150601806018060210602106021060210602106000000000000000000000
-000700000202002020020200000002020020200202002020020200000000000000000202002020020200202002020000000000000000020200202002020000000302003020030200000000020000200002000000
-000700000202002020020200000002020020200202002020020200000000000000000202002020020200202002020000000000000000020200202002020020200202000000000000000002020020200202000000
-000700000002000020000200000000020000200002000020000200000000000000000002000020000200002000020000000000000000000200002000020000000102001020010200000003020030200302000000
+000700000203002030020300000002030020300203002030020300000000000000000203002030020300203002030000000000000000020300203002030000000303003030030300000000030000300003000000
+000700000203002030020300000002030020300203002030020300000000000000000203002030020300203002030000000000000000020300203002030020300203000000000000000002030020300203000000
+000700000003000030000300000000030000300003000030000300000000000000000003000030000300003000030000000000000000000300003000030000000103001030010300000003030030300303000000
 __music__
 04 05060744
 04 48494a44
