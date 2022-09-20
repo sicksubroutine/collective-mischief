@@ -4,10 +4,10 @@
 
 Use the arrow keys for your movement. 
 
-Press the X key to phasers.
+Press the X key to fire phasers.
 
-Press Z to fire quantum torpedoes full spread. You start with a single spread of torpedoes, as you gain more Dilithium Crystals ![dilithium](https://user-images.githubusercontent.com/14047518/191149180-24da24ff-6aeb-493b-b643-d34ab5118f5d.png)
-, your quantum torpedo attack increases in power!
+Press Z to fire quantum torpedoes full spread. You start with a single spread of torpedoes, as you gain more Dilithium Crystals ![dilithium](https://user-images.githubusercontent.com/14047518/191149180-24da24ff-6aeb-493b-b643-d34ab5118f5d.png), your quantum torpedo attack increases in power!
+
 Sometimes the Borg will also drop shield recharge cells ![shields_recharge](https://user-images.githubusercontent.com/14047518/191149152-0f1e8cf8-578f-4751-95ec-34d10242704b.png)!
 
 ![shmup_14](https://user-images.githubusercontent.com/14047518/191154188-8c4dee3e-6c2b-4049-ace2-60da10962100.gif)
