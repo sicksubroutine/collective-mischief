@@ -10,6 +10,9 @@ Press Z to fire quantum torpedoes full spread. You start with a single spread of
 , your quantum torpedo attack increases in power!
 Sometimes the Borg will also drop shield recharge cells ![shields_recharge](https://user-images.githubusercontent.com/14047518/191149152-0f1e8cf8-578f-4751-95ec-34d10242704b.png)!
 
+![shmup_14](https://user-images.githubusercontent.com/14047518/191154188-8c4dee3e-6c2b-4049-ace2-60da10962100.gif)
+
+
 ### ![mission_report](https://user-images.githubusercontent.com/14047518/190782679-5f39de68-c97d-4583-b60b-d0a5416ec604.png)
 
 It has been six years since the Battle of Wolf 359 where the Borg destroyed 39 Federation starships at the cost of 11,000 lives.
@@ -19,6 +22,8 @@ The Borg have returned and they are determined to assimilate the Federation at a
 You can take command of the USS Enterprise 1701-E as Captain Jean Luc Picard or the USS Defiant NX-74205 as Lt. Commander Worf!
 
 You will use your lone ship to defend the Federation against this latest threat! If you fail, the entire Alpha Quadrant might end up assimilated as Borg drones!
+
+![shmup_15](https://user-images.githubusercontent.com/14047518/191154232-83ebc6ce-b72f-402d-b83e-6a954a7af410.gif)
 
 ### ![backstory](https://user-images.githubusercontent.com/14047518/190781598-e9d882b3-da12-4dcc-85f7-4a269732639c.png)
 
