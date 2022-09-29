@@ -3,7 +3,7 @@ version 37
 __lua__
 --"star trek:collective mischief"
 --by chaz(🐱)
---version 0.8.0
+--version 0.8.1
 --playtesting by cat,aktane,otto,dw817
 --tng music/starfield by felixdr
 --some music/sfx by gruber
@@ -13,7 +13,7 @@ __lua__
 
 
 function _init()
-	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.8.0"
+	mode1,debug,blinkt,t,lockout,shake,flash,flash_r,version="","",1,0,0,0,0,0,"0.8.1"
 	cartdata("star_trek_shmup")
 	--starfield test
 	star_modes={"slow","normal","fast","gold"}
@@ -341,20 +341,9 @@ end
 
 function makespr()
 	local myspr={}
-	myspr.shake=0
-	myspr.x=0
-	myspr.y=0
-	myspr.sx=0
-	myspr.sy=0
-	myspr.flash=0
-	myspr.flash1=0
-	myspr.aniframe=1
-	myspr.age=0
-	myspr.spr=0
-	myspr.sprw=1
-	myspr.sprh=1
-	myspr.colw=8
-	myspr.colh=8
+	myspr.shake,myspr.x,myspr.y,myspr.sx,myspr.sy=0,0,0,0,0
+	myspr.flash,myspr.flash1,myspr.aniframe=0,0,1
+	myspr.age,myspr.spr,myspr.sprw,myspr.sprh,myspr.colw,myspr.colh=0,0,1,1,8,8
 	return myspr
 end
 
@@ -456,21 +445,17 @@ function starfield_draw()
   --color / depth
   local grad=0
   if star.spd>1.7 then
-   star.c=7
+   star.c,grad=7,0
    star.trail*=2
-   grad=0
   elseif star.spd>1.4 then
-   star.c=6
+   star.c,grad=6,1
    star.trail*=1.4
-   grad=1
   elseif star.spd>0.8 then
-   star.c=13
+   star.c,grad=13,2
    star.trail*=1
-   grad=2
   elseif star.spd>0 then
-   star.c=1
+   star.c,grad=1,3
    star.trail*=0.5
-   grad=3
   end
    
   star.trail=mid(1,star.trail,100)
@@ -526,9 +511,11 @@ end
 function score_check()
 	if score>hiscore then
 		dset(0,score)
+		hiscore=score
 	end
 	if kills>hikills then	
 		dset(1,kills)
+		hikills=kills
 	end
 end
 
@@ -1379,6 +1366,8 @@ function draw_wavetxt()
 	pal()
 	if wave==lastwave then
 		cprint("oh no!",64,50,blink())
+	elseif wave==7 then
+		cprint("7 of 9 joke",64,50,blink())
 	else 
 		cprint("wave "..wave.. " of "..lastwave,64,50,blink())
 	end
@@ -1449,8 +1438,7 @@ function spawnwave1()
 	end
 	if wave==3 and wavetime<=0 then
 	-- medium cube introduction
-	atkfreq=45
-	firefreq=20
+	atkfreq,firefreq=45,20
 	placeens({
 		{3,1,2,1,1,3,1,2,1,3},
 		{1,1,2,2,2,2,1,2,1,2},
@@ -1460,8 +1448,7 @@ function spawnwave1()
 	end
 	if wave==4 and wavetime<=0 then
 	-- pyramid intro
-	atkfreq=42
-	firefreq=20
+	atkfreq,firefreq=42,20
 	placeens({
 		{3,3,2,3,3,3,3,2,3,3},
 		{1,1,1,1,1,1,1,1,1,1},
@@ -1471,8 +1458,7 @@ function spawnwave1()
 	end
 	if wave==5 and wavetime<=0 then
 	-- assim fed ship intro
-	atkfreq=100
-	firefreq=20
+	atkfreq,firefreq=100,20
 	placeens({
 		{3,3,3,0,5,0,3,3,3,1},
 		{0,2,2,3,0,0,1,2,3,1},
@@ -1482,8 +1468,7 @@ function spawnwave1()
 	end
 	-- assim fed ships are angry
 	if wave==6 and wavetime<=0 then
-	atkfreq=45
-	firefreq=20
+	atkfreq,firefreq=45,20
 	placeens({
 		{0,0,5,0,5,0,5,0,0,0},
 		{2,1,0,0,0,0,0,0,1,2},
@@ -1493,8 +1478,7 @@ function spawnwave1()
 	end
 	-- cube hell
 	if wave==7 and wavetime<=0 then
-	atkfreq=100
-	firefreq=20
+	atkfreq,firefreq=80,10
 	placeens({
 		{0,0,0,0,0,0,0,0,0,0},
 		{6,0,3,3,3,3,3,3,3,0},
@@ -1504,8 +1488,7 @@ function spawnwave1()
 	end
 	-- cube's revenge
 	if wave==8 and wavetime<=0 then
-	atkfreq=300
-	firefreq=40
+	atkfreq,firefreq=150,10
 	placeens({
 		{6,0,0,0,6,0,0,0,6,0},
 		{0,0,0,0,0,0,0,0,0,0},
@@ -1515,8 +1498,7 @@ function spawnwave1()
 	end
 	--final baws
 	if wave==9 and wavetime<=0 then
-	atkfreq=25
-	firefreq=20
+	atkfreq,firefreq=25,20
 	placeens({
 		{0,0,0,0,7,0,0,0,0,0},
 		{0,0,0,0,0,0,0,0,0,0},
@@ -1544,12 +1526,6 @@ function nextwave()
 		score_check()
 		state_switch("win")
 		music(2)
-		if score>hiscore then
-			dset(0,score)
-		end
-		if kills>hikills then	
-			dset(1,kills)
-		end
 	else
 		if wave==1 then
 			music(-1,1000)
